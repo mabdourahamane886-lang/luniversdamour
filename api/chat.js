@@ -1,7 +1,6 @@
-const MODEL = "gemini-flash-latest";
+const MODEL = "gpt-3.5-turbo";
 
 export default async function handler(request, response) {
-  // Logging basique
   console.log(`[${new Date().toISOString()}] ${request.method} /api/chat`);
 
   if (request.method !== "POST") {
@@ -9,11 +8,11 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: "Méthode non autorisée." });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.error("GEMINI_API_KEY not found in environment");
+    console.error("OPENAI_API_KEY not found in environment");
     return response.status(500).json({
-      error: "La clé GEMINI_API_KEY n'est pas configurée. Allez dans Vercel Settings → Environment Variables et ajoutez-la."
+      error: "La clé OPENAI_API_KEY n'est pas configurée. Allez dans Vercel Settings → Environment Variables et ajoutez-la."
     });
   }
 
@@ -43,13 +42,13 @@ export default async function handler(request, response) {
   const safeMessages = incomingMessages
     .filter((msg) =>
       msg &&
-      (msg.role === "user" || msg.role === "model" || msg.role === "assistant") &&
+      (msg.role === "user" || msg.role === "assistant" || msg.role === "model") &&
       typeof (msg.text || msg.content) === "string"
     )
     .slice(-12)
     .map((msg) => ({
-      role: msg.role === "assistant" ? "model" : msg.role,
-      parts: [{ text: String(msg.text || msg.content).slice(0, 1000) }]
+      role: msg.role === "model" ? "assistant" : msg.role,
+      content: String(msg.text || msg.content).slice(0, 1000)
     }));
 
   if (safeMessages.length === 0) {
@@ -60,40 +59,38 @@ export default async function handler(request, response) {
   const systemPrompt = "Tu es Amour AI, une assistante romantique francophone. Réponds avec douceur, empathie et des conseils pratiques. Reste concise (maximum 150 mots). Ne prétends pas remplacer un professionnel et encourage la sécurité et le respect en cas de situation inquiétante.";
 
   try {
-    console.log(`Calling Gemini ${MODEL} with ${safeMessages.length} messages...`);
+    console.log(`Calling OpenAI ${MODEL} with ${safeMessages.length} messages...`);
     
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-goog-api-key": apiKey
-        },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents: safeMessages,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 300
-          }
-        })
-      }
-    );
+    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...safeMessages
+        ],
+        temperature: 0.7,
+        max_tokens: 300
+      })
+    });
 
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error(`Gemini API ${geminiResponse.status}:`, errorText.slice(0, 200));
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      console.error(`OpenAI API ${openaiResponse.status}:`, errorText.slice(0, 200));
       return response.status(502).json({
         error: "L'assistant est temporairement indisponible. Veuillez réessayer."
       });
     }
 
-    const data = await geminiResponse.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const data = await openaiResponse.json();
+    const text = data.choices?.[0]?.message?.content;
 
     if (!text) {
-      console.error("Empty response from Gemini:", JSON.stringify(data).slice(0, 200));
+      console.error("Empty response from OpenAI:", JSON.stringify(data).slice(0, 200));
       return response.status(502).json({
         error: "L'assistant n'a pas pu générer une réponse."
       });
