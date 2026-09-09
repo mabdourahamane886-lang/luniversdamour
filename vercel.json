@@ -1,14 +1,12 @@
 {
-  "buildCommand": "echo 'Static site with API functions'",
-  "outputDirectory": "./",
   "functions": {
     "api/chat.js": {
-      "runtime": "nodejs24.x",
-      "memory": 128
+      "memory": 128,
+      "maxDuration": 30
     },
     "api/health.js": {
-      "runtime": "nodejs24.x",
-      "memory": 128
+      "memory": 128,
+      "maxDuration": 10
     }
   }
 }
