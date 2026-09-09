@@ -1825,7 +1825,7 @@
             </button>
           </form>
           <div class="ai-key-box">
-            <label for="geminiKeyInput">Clé Gemini (enregistrée dans votre navigateur)</label>
+            <label for="geminiKeyInput">Clé Gemini de secours (si Supabase n’est pas encore branché)</label>
             <div class="ai-key-row">
               <input
                 id="geminiKeyInput"
@@ -1949,6 +1949,7 @@
     <span>Texte copié avec succès !</span>
   </div>
 
+  <script src="js/supabase-config.js"></script>
   <script>
     const quotes = [
       {
@@ -2324,6 +2325,43 @@ https://lunivers-damour.vercel.app
       return contents;
     }
 
+    function getSupabaseConfig() {
+      const config = window.LUNIVERS_SUPABASE || {};
+      const url = String(config.url || "").replace(/\/$/, "");
+      const anonKey = String(config.anonKey || "").trim();
+      if (!url || !anonKey || url.includes("YOUR_PROJECT")) {
+        return null;
+      }
+      return { url, anonKey };
+    }
+
+    async function askSupabase(messages) {
+      const config = getSupabaseConfig();
+      if (!config) {
+        throw new Error("HOST_DOWN");
+      }
+      const response = await fetch(`${config.url}/functions/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.anonKey}`,
+          apikey: config.anonKey
+        },
+        body: JSON.stringify({ messages })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data.error || "Une erreur est survenue.");
+        error.serverError = response.status >= 500;
+        throw error;
+      }
+      const reply = data.reply || data.text;
+      if (!reply) {
+        throw new Error("Réponse vide de l’assistant.");
+      }
+      return reply;
+    }
+
     async function askServer(messages) {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -2397,12 +2435,19 @@ https://lunivers-damour.vercel.app
       try {
         let reply;
         try {
-          reply = await askServer(aiConversation);
-        } catch (error) {
-          if (error.serverError === false) {
-            throw error;
+          reply = await askSupabase(aiConversation);
+        } catch (supabaseError) {
+          if (supabaseError.serverError === false) {
+            throw supabaseError;
           }
-          reply = await askGeminiClient(aiConversation);
+          try {
+            reply = await askServer(aiConversation);
+          } catch (error) {
+            if (error.serverError === false) {
+              throw error;
+            }
+            reply = await askGeminiClient(aiConversation);
+          }
         }
         addAiMessage(reply);
       } catch (error) {

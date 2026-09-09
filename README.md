@@ -7,9 +7,52 @@ Un site romantique avec **Amour AI**, une assistante IA dédiée aux conseils de
 - 📖 Citations romantiques quotidiennes
 - 💬 Conseils pour les couples
 - 💌 Messages d'amour prêts à copier
-- 🤖 **Amour AI** — assistant romantique avec Gemini
+- 🤖 **Amour AI** — Gemini via une fonction Supabase
 - 🎙️ Saisie vocale
 - 💾 Historique conversationnel sauvegardé
+
+## Backend : Supabase
+
+La clé Gemini reste dans **Supabase Secrets**. Le navigateur n’appelle que la fonction `chat`.
+
+### 1. Créer le projet
+
+1. Allez sur [supabase.com](https://supabase.com)
+2. Créez un projet (nom : `luniversdamour`)
+3. Dans **Project Settings → API**, copiez :
+   - **Project URL**
+   - **anon public** (jamais la `service_role`)
+
+### 2. Coller l’URL et la clé anon dans le site
+
+Ouvrez `js/supabase-config.js` :
+
+```js
+window.LUNIVERS_SUPABASE = {
+  url: "https://VOTRE_PROJET.supabase.co",
+  anonKey: "eyJ..."
+};
+```
+
+### 3. Enregistrer la clé Gemini dans Supabase
+
+1. Créez une clé sur [Google AI Studio](https://aistudio.google.com/apikey)
+2. Dans un terminal, à la racine du dépôt :
+
+```bash
+npx supabase login
+npx supabase link --project-ref VOTRE_PROJECT_REF
+npx supabase secrets set GEMINI_API_KEY=votre_cle_gemini
+npx supabase functions deploy chat
+```
+
+`VOTRE_PROJECT_REF` est le préfixe de l’URL (`https://abcdef.supabase.co` → `abcdef`).
+
+### 4. Publier le site
+
+Poussez les changements vers GitHub. Le site GitHub Pages :
+
+https://mabdourahamane886-lang.github.io/luniversdamour/
 
 ## Installation locale
 
@@ -20,95 +63,25 @@ npm run dev
 
 Accédez à `http://localhost:3000`
 
-## Configuration Vercel
-
-Pour que **Amour AI** fonctionne, configurez la clé Gemini :
-
-### 1. Créer une clé API Gemini
-
-1. Allez sur [Google AI Studio](https://aistudio.google.com/apikey)
-2. Cliquez sur **Create API key**
-3. Copiez la clé
-
-### 2. Ajouter sur Vercel
-
-1. Allez sur [Vercel Dashboard](https://vercel.com/dashboard)
-2. Sélectionnez votre projet **luniversdamour**
-3. Allez dans **Settings → Environment Variables**
-4. Ajoutez une nouvelle variable :
-   - **Name**: `GEMINI_API_KEY`
-   - **Value**: votre clé Gemini
-   - **Environments**: Production, Preview et Development
-5. Enregistrez, puis redéployez le projet
-
-### 3. Redéployer
-
-Si le site affiche « This deployment is temporarily paused », Vercel a suspendu le projet (quota Hobby). Dans le dashboard Vercel, cliquez sur **Resume Service**, ou utilisez GitHub Pages.
-
-### GitHub Pages (sans Vercel)
-
-Le site est aussi publié sur GitHub Pages. Ouvrez :
-
-https://mabdourahamane886-lang.github.io/luniversdamour/
-
-1. Créez une clé sur [Google AI Studio](https://aistudio.google.com/apikey)
-2. Dans **Amour AI**, collez la clé puis cliquez sur **Enregistrer**
-3. Envoyez votre message
-
-La clé reste dans votre navigateur, pas dans GitHub.
-
 ## Structure du projet
 
 ```
 luniversdamour/
-├── index.html          # Page principale avec Amour AI
-├── api/
-│   ├── chat.js         # API serverless Gemini
-│   └── health.js       # Diagnostic de la clé
-├── package.json
+├── index.html
+├── js/supabase-config.js          # URL + clé anon (publiques)
+├── supabase/functions/chat/       # Gemini côté serveur
+├── api/chat.js                    # Ancien backend Vercel (secours)
 └── .env.example
 ```
 
 ## Dépannage
 
 **Amour AI ne répond pas** ?
-- Vérifiez que `GEMINI_API_KEY` est configurée dans **Vercel → Settings → Environment Variables**
-- La clé doit être activée pour Production
-- Si le site affiche « This deployment is temporarily paused », reprenez le déploiement dans Vercel
-- Testez `/api/health` : `gemini_api_key` doit indiquer « Configurée »
+- Vérifiez `js/supabase-config.js` (URL + `anonKey`)
+- Vérifiez que la fonction `chat` est déployée
+- Vérifiez `GEMINI_API_KEY` : `npx supabase secrets list`
 
-**Le chat ne se sauvegarde pas** ?
-- Votre navigateur a peut-être les cookies/localStorage bloqués
-- Vérifiez en mode navigation privée
-
-## API
-
-### POST `/api/chat`
-
-Envoie un message et reçoit la réponse d'Amour AI.
-
-**Requête** :
-```json
-{
-  "message": "Ma copine ne me parle plus",
-  "conversation": [
-    { "role": "user", "content": "..." },
-    { "role": "assistant", "content": "..." }
-  ]
-}
-```
-
-**Réponse** (200 OK) :
-```json
-{
-  "reply": "Je comprends que c'est difficile...",
-  "text": "Je comprends que c'est difficile..."
-}
-```
-
-## Modèle
-
-- `gemini-2.5-flash` — rapide, adapté au chat du site
+**Ne jamais coller** la clé Gemini ou la `service_role` dans le chat ou dans GitHub.
 
 ## Licence
 

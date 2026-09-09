@@ -24,8 +24,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare site
         run: |
-          mkdir _site
+          mkdir -p _site/js
           cp index.html _site/
+          cp js/supabase-config.js _site/js/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
