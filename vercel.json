@@ -1,0 +1,13 @@
+{
+  "buildCommand": "echo 'Static site with API functions'",
+  "outputDirectory": "./",
+  "env": {
+    "GEMINI_API_KEY": "@gemini_api_key"
+  },
+  "functions": {
+    "api/chat.js": {
+      "runtime": "nodejs18.x",
+      "memory": 512
+    }
+  }
+}

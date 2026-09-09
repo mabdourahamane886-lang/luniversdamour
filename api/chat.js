@@ -13,8 +13,14 @@ export default async function handler(request, response) {
     });
   }
 
-  const body = request.body || {};
-  const { messages, message, conversation, mode, tone } = body;
+  let body = {};
+  try {
+    body = typeof request.body === "string" ? JSON.parse(request.body) : request.body || {};
+  } catch (e) {
+    return response.status(400).json({ error: "Corps de la requête invalide." });
+  }
+
+  const { messages, message, conversation } = body;
   const incomingMessages = Array.isArray(messages)
     ? messages
     : [
@@ -27,49 +33,83 @@ export default async function handler(request, response) {
   }
 
   const safeMessages = incomingMessages
-    .filter((message) =>
-      message &&
-      (message.role === "user" || message.role === "model" || message.role === "assistant") &&
-      typeof (message.text || message.content) === "string"
+    .filter((msg) =>
+      msg &&
+      (msg.role === "user" || msg.role === "model" || msg.role === "assistant") &&
+      typeof (msg.text || msg.content) === "string"
     )
     .slice(-12)
-    .map((message) => ({
-      role: message.role === "assistant" ? "model" : message.role,
-      parts: [{ text: (message.text || message.content).slice(0, 1000) }]
+    .map((msg) => ({
+      role: msg.role === "assistant" ? "model" : msg.role,
+      parts: [{ text: String(msg.text || msg.content).slice(0, 1000) }]
     }));
 
   if (safeMessages.length === 0) {
     return response.status(400).json({ error: "Aucun message valide." });
   }
 
-  const instruction = mode === "generate"
-    ? `Tu es Lumi, une assistante romantique francophone. Génère un message ${tone || "tendre"} sincère, naturel et prêt à envoyer. Réponds uniquement avec le message, sans guillemets ni commentaire.`
-    : "Tu es Lumi, une assistante romantique francophone. Réponds avec douceur, empathie et des conseils pratiques. Reste concise (maximum 120 mots). Ne prétends pas remplacer un professionnel et encourage la sécurité et le respect en cas de situation inquiétante.";
+  const systemPrompt = "Tu es Amour AI, une assistante romantique francophone. Réponds avec douceur, empathie et des conseils pratiques. Reste concise (maximum 150 mots). Ne prétends pas remplacer un professionnel et encourage la sécurité et le respect en cas de situation inquiétante.";
 
-  const geminiResponse = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: instruction }] },
-        contents: safeMessages,
-        generationConfig: { temperature: 0.8, maxOutputTokens: 300 }
-      })
+  try {
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: safeMessages,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 300,
+            topP: 0.95,
+            topK: 40
+          },
+          safetySettings: [
+            {
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_NONE"
+            },
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_NONE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_NONE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
+        })
+      }
+    );
+
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error(`Gemini API ${geminiResponse.status}:`, errorText);
+      return response.status(502).json({
+        error: "L'assistant est temporairement indisponible. Veuillez réessayer."
+      });
     }
-  );
 
-  if (!geminiResponse.ok) {
-    const details = await geminiResponse.text();
-    console.error("Gemini API error:", details);
-    return response.status(502).json({ error: "L’assistant est temporairement indisponible." });
+    const data = await geminiResponse.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      console.error("Empty response from Gemini:", data);
+      return response.status(502).json({
+        error: "L'assistant n'a pas pu générer une réponse."
+      });
+    }
+
+    return response.status(200).json({ reply: text.trim(), text: text.trim() });
+  } catch (error) {
+    console.error("API Error:", error);
+    return response.status(500).json({
+      error: "Erreur serveur lors de la communication avec l'assistant."
+    });
   }
-
-  const data = await geminiResponse.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    return response.status(502).json({ error: "L’assistant n’a pas retourné de réponse." });
-  }
-
-  return response.status(200).json({ reply: text.trim(), text: text.trim() });
 }
