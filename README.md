@@ -1,13 +1,13 @@
 # L'univers d'amour ❤️
 
-Un site romantique avec **Amour AI**, une assistante IA intelligente dédiée aux conseils de couple et messages personnalisés.
+Un site romantique avec **Amour AI**, une assistante IA dédiée aux conseils de couple et messages personnalisés.
 
 ## Fonctionnalités
 
 - 📖 Citations romantiques quotidiennes
 - 💬 Conseils pour les couples
 - 💌 Messages d'amour prêts à copier
-- 🤖 **Amour AI** - Assistant romantico-romantique avec OpenAI
+- 🤖 **Amour AI** — assistant romantique avec Gemini
 - 🎙️ Saisie vocale
 - 💾 Historique conversationnel sauvegardé
 
@@ -22,29 +22,28 @@ Accédez à `http://localhost:3000`
 
 ## Configuration Vercel
 
-Pour que **Amour AI** fonctionne, vous devez configurer la clé OpenAI :
+Pour que **Amour AI** fonctionne, configurez la clé Gemini :
 
-### 1. Créer une clé API OpenAI
+### 1. Créer une clé API Gemini
 
-1. Allez sur [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Cliquez sur **Create new secret key**
-3. Donnez-lui un nom (ex: "Amour AI")
-4. Copiez la clé API
+1. Allez sur [Google AI Studio](https://aistudio.google.com/apikey)
+2. Cliquez sur **Create API key**
+3. Copiez la clé
 
 ### 2. Ajouter sur Vercel
 
 1. Allez sur [Vercel Dashboard](https://vercel.com/dashboard)
 2. Sélectionnez votre projet **luniversdamour**
-3. Allez dans **Settings → Environment Variables** (ou **Paramètres → Variables d'environnement**)
+3. Allez dans **Settings → Environment Variables**
 4. Ajoutez une nouvelle variable :
-   - **Name**: `OPENAI_API_KEY`
-   - **Value**: `sk-...` (votre clé API OpenAI)
-   - **Environments**: Cochez `Production`, `Preview` et `Development`
-5. Cliquez **Save** (ou **Enregistrer**)
+   - **Name**: `GEMINI_API_KEY`
+   - **Value**: votre clé Gemini
+   - **Environments**: Production, Preview et Development
+5. Enregistrez, puis redéployez le projet
 
 ### 3. Redéployer
 
-Déclenchez un redéploiement manuellement sur Vercel ou poussez un nouveau commit.
+Déclenchez un redéploiement sur Vercel (le déploiement actuel peut être en pause) ou poussez un nouveau commit.
 
 ## Structure du projet
 
@@ -52,18 +51,19 @@ Déclenchez un redéploiement manuellement sur Vercel ou poussez un nouveau comm
 luniversdamour/
 ├── index.html          # Page principale avec Amour AI
 ├── api/
-│   └── chat.js         # API serverless OpenAI
-├── package.json        # Configuration Node.js
-└── .env.example        # Modèle de configuration
+│   ├── chat.js         # API serverless Gemini
+│   └── health.js       # Diagnostic de la clé
+├── package.json
+└── .env.example
 ```
 
 ## Dépannage
 
-**Amour AI répond "Erreur 502"** ?
-- Vérifiez que `OPENAI_API_KEY` est configurée dans **Vercel → Settings → Environment Variables**
-- La clé doit être pour le projet `Production`
-- Attendez 1-2 minutes après le redéploiement que Vercel relance les fonctions
-- Assurez-vous que votre compte OpenAI dispose de crédits
+**Amour AI ne répond pas** ?
+- Vérifiez que `GEMINI_API_KEY` est configurée dans **Vercel → Settings → Environment Variables**
+- La clé doit être activée pour Production
+- Si le site affiche « This deployment is temporarily paused », reprenez le déploiement dans Vercel
+- Testez `/api/health` : `gemini_api_key` doit indiquer « Configurée »
 
 **Le chat ne se sauvegarde pas** ?
 - Votre navigateur a peut-être les cookies/localStorage bloqués
@@ -94,12 +94,10 @@ Envoie un message et reçoit la réponse d'Amour AI.
 }
 ```
 
-## Modèles supportés
+## Modèle
 
-- `gpt-3.5-turbo` - Rapide et économique
-- `gpt-4` - Plus puissant (coûts plus élevés)
+- `gemini-2.5-flash` — rapide, adapté au chat du site
 
 ## Licence
 
 MIT
-
