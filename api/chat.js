@@ -1,4 +1,4 @@
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-flash-latest";
 
 export default async function handler(request, response) {
   // Logging basique
@@ -63,10 +63,13 @@ export default async function handler(request, response) {
     console.log(`Calling Gemini ${MODEL} with ${safeMessages.length} messages...`);
     
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-goog-api-key": apiKey
+        },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
           contents: safeMessages,
