@@ -331,7 +331,7 @@
       align-items: center;
       padding: 25px 12px;
       border-radius: var(--radius);
-      background: white;
+      background: transparent;
       box-shadow: var(--shadow);
       text-align: center;
     }
@@ -749,6 +749,354 @@
       font-weight: bold;
     }
 
+    /* ASSISTANT IA */
+
+    .ai-section {
+      padding: 100px 0;
+      background: linear-gradient(135deg, #fff7f9, #fff);
+    }
+
+    .ai-section > .container {
+      max-width: 1120px;
+    }
+
+    .ai-chat-card {
+      grid-template-columns: .9fr 1.1fr;
+      margin: auto;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 22px 65px rgba(188,36,74,.16);
+    }
+
+    .ai-intro {
+      max-width: 720px;
+      margin: 0 auto 38px;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      text-align: center;
+    }
+
+    .ai-intro h2,
+    .ai-intro h3 {
+      margin-bottom: 12px;
+      font-size: clamp(32px, 5vw, 52px);
+    }
+
+    .ai-intro p {
+      margin-bottom: 25px;
+      color: var(--text);
+      font-size: inherit;
+      line-height: 1.8;
+    }
+
+    .ai-intro ul {
+      display: grid;
+      gap: 12px;
+      margin-top: 24px;
+      padding: 0;
+      color: var(--text);
+      font-size: 12px;
+      list-style: none;
+    }
+
+    .ai-intro li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .ai-intro li i {
+      margin-top: 2px;
+      color: var(--primary);
+    }
+
+    .ai-chat,
+    .ai-chat-card {
+      display: flex;
+      min-height: 0;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+    }
+
+    .ai-chat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px;
+      color: white;
+      background: linear-gradient(135deg, #6b1d43, #e84368);
+    }
+
+    .ai-chat-header .ai-clear-button {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      margin-left: auto;
+      place-items: center;
+      color: white;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 50%;
+      background: transparent;
+    }
+
+    .ai-avatar,
+    .message-avatar {
+      display: grid;
+      flex: 0 0 auto;
+      width: 43px;
+      height: 43px;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      font-size: 21px;
+    }
+
+    .ai-chat-header strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .ai-chat-header span {
+      display: block;
+      margin-top: 3px;
+      color: #ffe8ee;
+      font-size: 10px;
+    }
+
+    .ai-messages {
+      display: flex;
+      flex: 1;
+      min-height: 260px;
+      max-height: 520px;
+      flex-direction: column;
+      gap: 18px;
+      overflow-y: auto;
+      padding: 24px 20px;
+      background: white;
+    }
+
+    .ai-message {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      max-width: 82%;
+    }
+
+    .ai-message-user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .ai-message-assistant {
+      display: flex;
+      gap: 10px;
+    }
+
+    .message-avatar {
+      flex: 0 0 auto;
+    }
+
+    .message-content {
+      flex: 1;
+      padding: 13px 16px;
+      border-radius: 18px;
+      color: var(--dark);
+      background: var(--light);
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .ai-message-user .message-avatar {
+      color: white;
+      background: var(--primary);
+      font-size: 14px;
+    }
+
+    .ai-message-assistant .message-avatar {
+      color: white;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+    }
+
+    .ai-message-user .message-content {
+      color: white;
+      background: var(--primary);
+    }
+
+    .ai-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding: 12px 18px 0;
+      background: white;
+    }
+
+    .ai-suggestions button {
+      padding: 8px 10px;
+      color: var(--primary-dark);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: white;
+      font-size: 10px;
+    }
+
+    .ai-suggestions button:hover {
+      color: white;
+      background: var(--primary);
+    }
+
+    .ai-thinking {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 0 18px 10px;
+      color: var(--text);
+      background: #fffafb;
+      font-size: 10px;
+    }
+
+    .ai-thinking.show {
+      display: flex;
+    }
+
+    .ai-thinking span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--primary);
+      animation: aiPulse 1s infinite ease-in-out;
+    }
+
+    .ai-thinking span:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .ai-thinking span:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    .ai-form {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: white;
+    }
+
+    .ai-input-area {
+      align-items: flex-end;
+      gap: 10px;
+      padding: 16px;
+    }
+
+    .ai-form input {
+      min-width: 0;
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 25px;
+      outline: none;
+      font-size: 12px;
+    }
+
+    .ai-form input:focus {
+      border-color: var(--primary);
+    }
+
+    .ai-form textarea {
+      min-width: 0;
+      flex: 1;
+      min-height: 44px;
+      max-height: 130px;
+      resize: none;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      outline: none;
+      font: inherit;
+      font-size: 12px;
+      color: var(--dark);
+      background: var(--light);
+    }
+
+    .ai-form textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .ai-icon-button,
+    .ai-send-button {
+      display: grid;
+      flex: 0 0 auto;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      color: var(--primary);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: white;
+    }
+
+    .ai-send-button {
+      color: white;
+      background: var(--primary);
+    }
+
+    .ai-send-button:disabled {
+      cursor: wait;
+      opacity: .6;
+    }
+
+    .ai-disclaimer {
+      padding: 0 18px 14px;
+      color: #a48f98;
+      background: white;
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .ai-send {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      color: white;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+
+    .ai-send:disabled {
+      cursor: wait;
+      opacity: .6;
+    }
+
+    .ai-generator {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .ai-generator select,
+    .ai-generator button {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: white;
+      font-size: 11px;
+    }
+
+    .ai-generator button {
+      color: white;
+      border-color: var(--primary);
+      background: var(--primary);
+      font-weight: bold;
+    }
+
     /* RESEAUX */
 
     .social-section {
@@ -907,6 +1255,18 @@
       }
     }
 
+    @keyframes aiPulse {
+      0%, 100% {
+        opacity: .3;
+        transform: translateY(0);
+      }
+
+      50% {
+        opacity: 1;
+        transform: translateY(-3px);
+      }
+    }
+
     @keyframes floatHeart {
       0% {
         opacity: 0;
@@ -1034,6 +1394,14 @@
         flex-basis: calc(100% - 55px);
       }
 
+      .ai-section {
+        padding: 70px 0;
+      }
+
+      .ai-message {
+        max-width: 94%;
+      }
+
       .copy-message {
         margin-left: 55px;
       }
@@ -1062,6 +1430,7 @@
         <a href="#citations">Citations</a>
         <a href="#conseils">Conseils</a>
         <a href="#messages">Messages</a>
+        <a href="#amour-ai">Amour AI</a>
         <a href="#reseaux">Réseaux</a>
       </nav>
 
@@ -1355,6 +1724,72 @@
             </button>
           </div>
 
+        </div>
+      </div>
+    </section>
+
+    <!-- AMOUR AI -->
+    <section class="ai-section" id="amour-ai">
+      <div class="container">
+        <div class="ai-intro">
+          <span class="section-kicker">Votre compagnon de confiance</span>
+          <h2>Parlez à Amour AI ✨</h2>
+          <p>
+            Une intelligence artificielle pensée pour vous écouter,
+            vous accompagner et vous aider à trouver les bons mots.
+          </p>
+          <button class="btn btn-primary" id="openAiButton" type="button">
+            <i class="fa-solid fa-sparkles"></i>
+            Commencer une conversation
+          </button>
+        </div>
+
+        <div class="ai-chat-card" id="aiChatCard">
+          <div class="ai-chat-header">
+            <div class="ai-avatar">✨</div>
+            <div>
+              <strong>Amour AI</strong>
+              <span>Disponible pour vous écouter</span>
+            </div>
+            <button class="ai-clear-button" id="clearAiChat" type="button" title="Effacer la conversation">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+
+          <div class="ai-suggestions" id="aiSuggestions">
+            <button type="button" data-question="Ma copine ne me parle plus depuis trois jours, que dois-je faire ?">Elle ne me parle plus</button>
+            <button type="button" data-question="Écris-moi un message romantique de bonne nuit.">Message romantique</button>
+            <button type="button" data-question="Comment améliorer la communication dans mon couple ?">Améliorer mon couple</button>
+            <button type="button" data-question="Propose-moi une idée de rendez-vous simple et romantique.">Idée de rendez-vous</button>
+          </div>
+
+          <div class="ai-messages" id="aiMessages" aria-live="polite">
+            <div class="ai-message ai-message-assistant">
+              <div class="message-avatar">✨</div>
+              <div class="message-content">
+                Bonjour ❤️ Je suis Amour AI. Je peux vous aider avec vos relations,
+                vos émotions, vos messages et vos questions du quotidien.
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-thinking" id="aiThinking">
+            <span></span><span></span><span></span>
+            Amour AI réfléchit…
+          </div>
+
+          <form class="ai-form ai-input-area" id="aiForm">
+            <button type="button" class="ai-icon-button" id="voiceButton" title="Parler avec le microphone">
+              <i class="fa-solid fa-microphone"></i>
+            </button>
+            <textarea id="aiInput" rows="1" maxlength="3000" placeholder="Écrivez votre question..." required></textarea>
+            <button type="submit" class="ai-send-button" id="aiSend" title="Envoyer">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </form>
+          <small class="ai-disclaimer">
+            Amour AI fournit des conseils généraux et ne remplace pas un professionnel.
+          </small>
         </div>
       </div>
     </section>
@@ -1750,6 +2185,107 @@ https://lunivers-damour.vercel.app
         copyText(message);
       });
     });
+
+    const aiForm = document.getElementById("aiForm");
+    const aiInput = document.getElementById("aiInput");
+    const aiSend = document.getElementById("aiSend");
+    const aiMessages = document.getElementById("aiMessages");
+    const aiThinking = document.getElementById("aiThinking");
+    const aiChatCard = document.getElementById("aiChatCard");
+    const aiConversation = [];
+
+    function addAiMessage(text, role = "model") {
+      const message = document.createElement("div");
+      const isUser = role === "user";
+      message.className = `ai-message ${isUser ? "ai-message-user" : "ai-message-assistant"}`;
+      message.innerHTML = `
+        <div class="message-avatar">${isUser ? "💗" : "✨"}</div>
+        <div class="message-content"></div>
+      `;
+      message.querySelector(".message-content").textContent = text;
+      aiMessages.appendChild(message);
+      aiMessages.scrollTop = aiMessages.scrollHeight;
+    }
+
+    async function askAi(text) {
+      aiConversation.push({ role: "user", text });
+      addAiMessage(text, "user");
+      aiSend.disabled = true;
+      aiThinking.classList.add("show");
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: aiConversation })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Une erreur est survenue.");
+        }
+
+        aiConversation.push({ role: "model", text: data.text });
+        addAiMessage(data.text);
+      } catch (error) {
+        aiConversation.pop();
+        addAiMessage(error.message || "Impossible de joindre Amour AI pour le moment.");
+      } finally {
+        aiThinking.classList.remove("show");
+        aiSend.disabled = false;
+      }
+    }
+
+    aiForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const text = aiInput.value.trim();
+      if (!text || aiSend.disabled) {
+        return;
+      }
+      aiInput.value = "";
+      askAi(text);
+    });
+
+    document.getElementById("openAiButton").addEventListener("click", () => {
+      aiChatCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      aiInput.focus();
+    });
+
+    document.querySelectorAll("#aiSuggestions button").forEach((button) => {
+      button.addEventListener("click", () => {
+        aiInput.value = button.dataset.question;
+        aiInput.focus();
+      });
+    });
+
+    document.getElementById("clearAiChat").addEventListener("click", () => {
+      aiConversation.length = 0;
+      aiMessages.innerHTML = `
+        <div class="ai-message ai-message-assistant">
+          <div class="message-avatar">✨</div>
+          <div class="message-content">Bonjour ❤️ Je suis Amour AI. Comment puis-je vous aider ?</div>
+        </div>
+      `;
+    });
+
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const voiceButton = document.getElementById("voiceButton");
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "fr-FR";
+      recognition.interimResults = false;
+      voiceButton.addEventListener("click", () => recognition.start());
+      recognition.addEventListener("result", (event) => {
+        aiInput.value = event.results[0][0].transcript;
+        aiInput.focus();
+      });
+      recognition.addEventListener("error", () => {
+        showToast("Le microphone n’est pas disponible.");
+      });
+    } else {
+      voiceButton.disabled = true;
+      voiceButton.title = "La saisie vocale n’est pas disponible";
+    }
 
     const menuToggle = document.querySelector(".menu-toggle");
     const navMenu = document.querySelector(".nav-menu");
