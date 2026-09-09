@@ -4,7 +4,7 @@
   "functions": {
     "api/chat.js": {
       "runtime": "nodejs24.x",
-      "memory": 512
+      "memory": 128
     }
   }
 }

@@ -1059,6 +1059,43 @@
       text-align: center;
     }
 
+    .ai-key-box {
+      display: grid;
+      gap: 8px;
+      padding: 0 16px 16px;
+      background: white;
+    }
+
+    .ai-key-box label {
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .ai-key-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .ai-key-box input {
+      min-width: 0;
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      outline: none;
+      font-size: 12px;
+    }
+
+    .ai-key-box button {
+      padding: 10px 14px;
+      color: white;
+      border-radius: 18px;
+      background: var(--primary);
+      font-size: 11px;
+      font-weight: bold;
+    }
+
     .ai-send {
       display: grid;
       width: 42px;
@@ -1787,8 +1824,21 @@
               <i class="fa-solid fa-paper-plane"></i>
             </button>
           </form>
+          <div class="ai-key-box">
+            <label for="geminiKeyInput">Clé Gemini (enregistrée dans votre navigateur)</label>
+            <div class="ai-key-row">
+              <input
+                id="geminiKeyInput"
+                type="password"
+                autocomplete="off"
+                placeholder="Collez votre clé API Gemini"
+              >
+              <button type="button" id="saveGeminiKey">Enregistrer</button>
+            </div>
+          </div>
           <small class="ai-disclaimer">
             Amour AI fournit des conseils généraux et ne remplace pas un professionnel.
+            Créez une clé gratuite sur aistudio.google.com/apikey.
           </small>
         </div>
       </div>
@@ -2231,25 +2281,128 @@ https://lunivers-damour.vercel.app
       });
     }
 
+    const GEMINI_MODEL = "gemini-2.5-flash";
+    const geminiKeyInput = document.getElementById("geminiKeyInput");
+    const GEMINI_SYSTEM_PROMPT =
+      "Tu es Amour AI, une assistante romantique francophone. Réponds avec douceur, empathie et des conseils pratiques. Reste concise (maximum 150 mots). Ne prétends pas remplacer un professionnel et encourage la sécurité et le respect en cas de situation inquiétante.";
+
+    geminiKeyInput.value = localStorage.getItem("amourAIGeminiKey") || "";
+
+    document.getElementById("saveGeminiKey").addEventListener("click", () => {
+      const key = geminiKeyInput.value.trim();
+      if (!key) {
+        localStorage.removeItem("amourAIGeminiKey");
+        showToast("Clé Gemini retirée");
+        return;
+      }
+      localStorage.setItem("amourAIGeminiKey", key);
+      showToast("Clé Gemini enregistrée");
+    });
+
+    function buildGeminiContents(conversation) {
+      const contents = [];
+      conversation
+        .filter((item) =>
+          item &&
+          (item.role === "user" || item.role === "assistant" || item.role === "model") &&
+          typeof (item.text || item.content) === "string"
+        )
+        .slice(-12)
+        .forEach((item) => {
+          const role = item.role === "assistant" ? "model" : item.role;
+          const text = String(item.text || item.content).slice(0, 1000);
+          const last = contents[contents.length - 1];
+          if (last && last.role === role) {
+            last.parts[0].text += `\n${text}`;
+          } else {
+            contents.push({ role, parts: [{ text }] });
+          }
+        });
+      while (contents.length && contents[0].role !== "user") {
+        contents.shift();
+      }
+      return contents;
+    }
+
+    async function askServer(messages) {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages })
+      });
+      if (response.status === 402 || response.status === 503) {
+        throw new Error("HOST_DOWN");
+      }
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error("HOST_DOWN");
+      }
+      const data = await response.json();
+      if (!response.ok) {
+        const error = new Error(data.error || "Une erreur est survenue.");
+        error.serverError = response.status >= 500;
+        throw error;
+      }
+      const reply = data.reply || data.text;
+      if (!reply) {
+        throw new Error("Réponse vide de l’assistant.");
+      }
+      return reply;
+    }
+
+    async function askGeminiClient(messages) {
+      const apiKey = (localStorage.getItem("amourAIGeminiKey") || geminiKeyInput.value || "").trim();
+      if (!apiKey) {
+        throw new Error("Le site Vercel est en pause. Collez votre clé Gemini ci-dessous, puis renvoyez votre message.");
+      }
+      const contents = buildGeminiContents(messages);
+      if (!contents.length) {
+        throw new Error("Aucun message utilisateur valide.");
+      }
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: GEMINI_SYSTEM_PROMPT }] },
+            contents,
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 400
+            }
+          })
+        }
+      );
+      const data = await geminiResponse.json().catch(() => ({}));
+      if (!geminiResponse.ok) {
+        throw new Error(data.error?.message || "Clé Gemini invalide ou quota dépassé.");
+      }
+      const reply = (data.candidates?.[0]?.content?.parts || [])
+        .map((part) => part.text)
+        .filter(Boolean)
+        .join("\n")
+        .trim();
+      if (!reply) {
+        throw new Error("L’assistant n’a pas pu générer une réponse.");
+      }
+      return reply;
+    }
+
     async function askAi(text) {
       addAiMessage(text, "user");
       aiSend.disabled = true;
       aiThinking.classList.add("show");
 
       try {
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: aiConversation })
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Une erreur est survenue.");
-        }
-
-        const reply = data.reply || data.text;
-        if (!reply) {
-          throw new Error("Réponse vide de l’assistant.");
+        let reply;
+        try {
+          reply = await askServer(aiConversation);
+        } catch (error) {
+          if (error.serverError === false) {
+            throw error;
+          }
+          reply = await askGeminiClient(aiConversation);
         }
         addAiMessage(reply);
       } catch (error) {

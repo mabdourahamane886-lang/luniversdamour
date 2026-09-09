@@ -43,7 +43,19 @@ Pour que **Amour AI** fonctionne, configurez la clé Gemini :
 
 ### 3. Redéployer
 
-Déclenchez un redéploiement sur Vercel (le déploiement actuel peut être en pause) ou poussez un nouveau commit.
+Si le site affiche « This deployment is temporarily paused », Vercel a suspendu le projet (quota Hobby). Dans le dashboard Vercel, cliquez sur **Resume Service**, ou utilisez GitHub Pages.
+
+### GitHub Pages (sans Vercel)
+
+Le site est aussi publié sur GitHub Pages. Ouvrez :
+
+https://mabdourahamane886-lang.github.io/luniversdamour/
+
+1. Créez une clé sur [Google AI Studio](https://aistudio.google.com/apikey)
+2. Dans **Amour AI**, collez la clé puis cliquez sur **Enregistrer**
+3. Envoyez votre message
+
+La clé reste dans votre navigateur, pas dans GitHub.
 
 ## Structure du projet
 
