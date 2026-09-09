@@ -13,21 +13,29 @@ export default async function handler(request, response) {
     });
   }
 
-  const { messages, mode, tone } = request.body || {};
-  if (!Array.isArray(messages) || messages.length === 0) {
+  const body = request.body || {};
+  const { messages, message, conversation, mode, tone } = body;
+  const incomingMessages = Array.isArray(messages)
+    ? messages
+    : [
+        ...(Array.isArray(conversation) ? conversation : []),
+        ...(typeof message === "string" ? [{ role: "user", content: message }] : [])
+      ];
+
+  if (incomingMessages.length === 0) {
     return response.status(400).json({ error: "La conversation est requise." });
   }
 
-  const safeMessages = messages
+  const safeMessages = incomingMessages
     .filter((message) =>
       message &&
-      (message.role === "user" || message.role === "model") &&
-      typeof message.text === "string"
+      (message.role === "user" || message.role === "model" || message.role === "assistant") &&
+      typeof (message.text || message.content) === "string"
     )
     .slice(-12)
     .map((message) => ({
-      role: message.role,
-      parts: [{ text: message.text.slice(0, 1000) }]
+      role: message.role === "assistant" ? "model" : message.role,
+      parts: [{ text: (message.text || message.content).slice(0, 1000) }]
     }));
 
   if (safeMessages.length === 0) {
@@ -63,5 +71,5 @@ export default async function handler(request, response) {
     return response.status(502).json({ error: "L’assistant n’a pas retourné de réponse." });
   }
 
-  return response.status(200).json({ text: text.trim() });
+  return response.status(200).json({ reply: text.trim(), text: text.trim() });
 }

@@ -2192,9 +2192,11 @@ https://lunivers-damour.vercel.app
     const aiMessages = document.getElementById("aiMessages");
     const aiThinking = document.getElementById("aiThinking");
     const aiChatCard = document.getElementById("aiChatCard");
-    const aiConversation = [];
+    let aiConversation = JSON.parse(
+      localStorage.getItem("amourAIConversation") || "[]"
+    );
 
-    function addAiMessage(text, role = "model") {
+    function addAiMessage(text, role = "model", save = true) {
       const message = document.createElement("div");
       const isUser = role === "user";
       message.className = `ai-message ${isUser ? "ai-message-user" : "ai-message-assistant"}`;
@@ -2205,10 +2207,31 @@ https://lunivers-damour.vercel.app
       message.querySelector(".message-content").textContent = text;
       aiMessages.appendChild(message);
       aiMessages.scrollTop = aiMessages.scrollHeight;
+
+      if (save) {
+        aiConversation.push({
+          role: isUser ? "user" : "model",
+          text
+        });
+        localStorage.setItem(
+          "amourAIConversation",
+          JSON.stringify(aiConversation)
+        );
+      }
+    }
+
+    function restoreAiConversation() {
+      if (!aiConversation.length) {
+        return;
+      }
+
+      aiMessages.innerHTML = "";
+      aiConversation.forEach((message) => {
+        addAiMessage(message.text || message.content, message.role, false);
+      });
     }
 
     async function askAi(text) {
-      aiConversation.push({ role: "user", text });
       addAiMessage(text, "user");
       aiSend.disabled = true;
       aiThinking.classList.add("show");
@@ -2224,10 +2247,12 @@ https://lunivers-damour.vercel.app
           throw new Error(data.error || "Une erreur est survenue.");
         }
 
-        aiConversation.push({ role: "model", text: data.text });
-        addAiMessage(data.text);
+        const reply = data.reply || data.text;
+        if (!reply) {
+          throw new Error("Réponse vide de l’assistant.");
+        }
+        addAiMessage(reply);
       } catch (error) {
-        aiConversation.pop();
         addAiMessage(error.message || "Impossible de joindre Amour AI pour le moment.");
       } finally {
         aiThinking.classList.remove("show");
@@ -2258,13 +2283,15 @@ https://lunivers-damour.vercel.app
     });
 
     document.getElementById("clearAiChat").addEventListener("click", () => {
-      aiConversation.length = 0;
+      aiConversation = [];
+      localStorage.removeItem("amourAIConversation");
       aiMessages.innerHTML = `
         <div class="ai-message ai-message-assistant">
           <div class="message-avatar">✨</div>
           <div class="message-content">Bonjour ❤️ Je suis Amour AI. Comment puis-je vous aider ?</div>
         </div>
       `;
+      showToast("Conversation effacée");
     });
 
     const SpeechRecognition =
@@ -2286,6 +2313,8 @@ https://lunivers-damour.vercel.app
       voiceButton.disabled = true;
       voiceButton.title = "La saisie vocale n’est pas disponible";
     }
+
+    restoreAiConversation();
 
     const menuToggle = document.querySelector(".menu-toggle");
     const navMenu = document.querySelector(".nav-menu");
