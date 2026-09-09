@@ -1,16 +1,21 @@
+import { handlePreflight, ok } from "./_lib/http.js";
+import { createProviders } from "../src/ai/provider-factory.js";
+import { PROMPT_VERSION } from "../src/ai/prompts.js";
+
 export default async function handler(request, response) {
+  if (handlePreflight(request, response)) return;
   if (request.method !== "GET") {
-    return response.status(405).json({ error: "GET only" });
+    response.setHeader("Allow", "GET");
+    return response.status(405).json({ error: { code: "METHOD_NOT_ALLOWED", message: "GET only" } });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  const keyStatus = apiKey ? "✅ Configurée" : "❌ Manquante";
-
-  return response.status(200).json({
-    status: "API diagnostics",
-    gemini_api_key: keyStatus,
-    node_version: process.version,
+  const { primary, secondary } = createProviders();
+  return ok(response, {
+    status: "ok",
+    promptVersion: PROMPT_VERSION,
+    node: process.version,
     timestamp: new Date().toISOString(),
-    message: "L'API est accessible. Si GEMINI_API_KEY est configurée, utilisez POST /api/chat"
+    primaryConfigured: Boolean(primary),
+    secondaryConfigured: Boolean(secondary)
   });
 }

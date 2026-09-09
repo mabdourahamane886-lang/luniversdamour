@@ -1,75 +1,40 @@
 # L'univers d'amour ❤️
 
-Un site romantique avec **Amour AI**, une assistante IA dédiée aux conseils de couple et messages personnalisés.
+Site romantique statique avec **Amour AI**, une assistante francophone pour les conseils de couple et les messages personnalisés.
 
 ## Fonctionnalités
 
-- 📖 Citations romantiques quotidiennes
-- 💬 Conseils pour les couples
-- 💌 Messages d'amour prêts à copier
-- 🤖 **Amour AI** — Gemini (`gemini-2.5-flash`) via Vercel `/api/chat`
-- 🎙️ Saisie vocale
-- 💾 Historique conversationnel sauvegardé
+- Citations, catégories, recherche et favoris dans le navigateur
+- Messages doux et partage WhatsApp
+- Conversation Amour AI avec historique local
+- Saisie vocale et réponses accessibles
+- Limitation de débit, quota quotidien, modération et fournisseurs IA de secours
 
-## Backend : Vercel + Gemini
+## Configuration Vercel
 
-Sur [luniversdamour.vercel.app](https://luniversdamour.vercel.app), Amour AI appelle d’abord `/api/chat`. La clé reste dans les variables d’environnement Vercel.
+Les clés API restent uniquement côté serveur. Ne les ajoutez jamais dans `index.html`, `localStorage` ou GitHub.
 
-1. Créez une clé sur [Google AI Studio](https://aistudio.google.com/apikey)
-2. Dans [Vercel → Settings → Environment Variables](https://vercel.com/dashboard) :
-   - **Name** : `GEMINI_API_KEY`
-   - **Value** : votre clé Gemini
-   - **Environments** : Production, Preview, Development
-3. Redéployez le projet
+Dans **Vercel → Settings/Paramètres → Environment Variables/Variables d’environnement**, ajoutez au minimum l’un des fournisseurs suivants pour **Production**, **Preview** et **Development** :
 
-Le navigateur n’envoie jamais la clé. Test : `https://luniversdamour.vercel.app/api/health` doit indiquer `gemini_api_key: Configurée`.
-
-## Backend de secours : Supabase
-
-La clé Gemini peut aussi rester dans **Supabase Secrets**. Le navigateur n’appelle alors que la fonction `chat`.
-
-### 1. Créer le projet
-
-1. Allez sur [supabase.com](https://supabase.com)
-2. Créez un projet (nom : `luniversdamour`)
-3. Dans **Project Settings → API**, copiez :
-   - **Project URL**
-   - **anon public** (jamais la `service_role`)
-
-### 2. Coller l’URL et la clé anon dans le site
-
-Ouvrez `js/supabase-config.js` :
-
-```js
-window.LUNIVERS_SUPABASE = {
-  url: "https://VOTRE_PROJET.supabase.co",
-  anonKey: "eyJ..."
-};
+```text
+AI_PRIMARY_API_KEY=votre_cle_gemini
+AI_PRIMARY_MODEL=gemini-2.5-flash
+AI_SECONDARY_API_KEY=votre_cle_openai
+AI_SECONDARY_MODEL=gpt-4o-mini
 ```
 
-### 3. Enregistrer la clé Gemini dans Supabase
+Le serveur essaie d’abord le fournisseur principal puis le fournisseur secondaire si le premier échoue. Vous pouvez utiliser directement `GEMINI_API_KEY` ou `OPENAI_API_KEY` pour une configuration rétrocompatible, mais les variables `AI_*` sont recommandées.
 
-1. Créez une clé sur [Google AI Studio](https://aistudio.google.com/apikey)
-2. Dans un terminal, à la racine du dépôt :
+Variables optionnelles :
 
-```bash
-npx supabase login
-npx supabase link --project-ref VOTRE_PROJECT_REF
-npx supabase secrets set GEMINI_API_KEY=votre_cle_gemini
-npx supabase functions deploy chat
+```text
+AI_TIMEOUT_MS=30000
+AI_MAX_OUTPUT_TOKENS=900
+APP_URL=https://luniversdamour.vercel.app
+ADMIN_TOKEN=un_token_admin
 ```
 
-`VOTRE_PROJECT_REF` est le préfixe de l’URL (`https://abcdef.supabase.co` → `abcdef`).
-
-### 4. Publier le site
-
-Poussez les changements vers GitHub. Le site Vercel :
-
-https://luniversdamour.vercel.app/
-
-GitHub Pages :
-
-https://mabdourahamane886-lang.github.io/luniversdamour/
+Après toute modification des variables, lancez un **redéploiement** Vercel.
 
 ## Installation locale
 
@@ -78,29 +43,41 @@ npm install
 npm run dev
 ```
 
-Accédez à `http://localhost:3000`
+Le site est ensuite disponible sur `http://localhost:3000`.
 
-## Structure du projet
+## API
 
+- `POST /api/chat` : conversation Amour AI
+- `GET /api/health` : état de la configuration des fournisseurs
+- `POST /api/generate` : génération de contenus
+- `POST /api/analyze-message` : analyse d’un message
+- `POST /api/quiz` : quiz relationnel
+
+Les réponses JSON de l’API utilisent la forme :
+
+```json
+{
+  "success": true,
+  "data": {
+    "reply": "Réponse d'Amour AI"
+  }
+}
 ```
-luniversdamour/
-├── index.html
-├── js/supabase-config.js          # URL + clé anon (publiques)
-├── supabase/functions/chat/       # Gemini côté serveur (secours)
-├── api/chat.js                    # Gemini sur Vercel (`GEMINI_API_KEY`)
-└── .env.example
+
+## Sécurité
+
+- Les secrets sont lus avec `process.env` côté serveur.
+- Les messages sont validés et limités en longueur.
+- Un quota gratuit et une limitation horaire protègent les endpoints.
+- Les clés déjà publiées dans une conversation doivent être révoquées depuis leur fournisseur.
+
+## Structure
+
+```text
+index.html                    # Site et interface Amour AI
+api/chat.js                  # Endpoint conversationnel
+api/_lib/http.js             # Validation HTTP, CORS et quotas
+src/ai/                      # Fournisseurs, prompts et modération
+src/services/                # Quotas et logique métier
+js/frontend/                 # Modules frontend complémentaires
 ```
-
-## Dépannage
-
-**Amour AI ne répond pas** ?
-- Vérifiez `GEMINI_API_KEY` dans Vercel, puis redéployez
-- Testez `/api/health` : `gemini_api_key` doit indiquer « Configurée »
-- Si Vercel est en pause (402), reprenez le projet dans le dashboard
-- Secours : `js/supabase-config.js` + fonction `chat` déployée
-
-**Ne jamais coller** la clé Gemini ou la `service_role` dans le chat ou dans GitHub.
-
-## Licence
-
-MIT

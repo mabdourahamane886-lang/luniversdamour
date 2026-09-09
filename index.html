@@ -4,12 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>L’univers d’amour 🥹❤️</title>
-
+  <title>L’univers d’amour ✨ Citations, conseils couple et Amour AI</title>
+  <link rel="canonical" href="https://luniversdamour.vercel.app/">
   <meta
     name="description"
-    content="Citations, conseils couple et messages doux chaque jour."
+    content="Citations, conseils couple, messages doux et Amour AI, une assistante pour trouver les bons mots."
   >
+  <meta property="og:title" content="L’univers d’amour ✨">
+  <meta property="og:description" content="Citations, conseils couple et Amour AI pour vous accompagner avec douceur.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://luniversdamour.vercel.app/">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,6 +41,17 @@
       --border: #f3dce3;
       --shadow: 0 15px 45px rgba(188, 36, 74, .13);
       --radius: 22px;
+      --chat-bg: #ffffff;
+    }
+
+    html[data-theme="dark"] {
+      --dark: #f7eef2;
+      --text: #d7c4cb;
+      --light: #2a1f25;
+      --white: #1b1418;
+      --border: #4a3340;
+      --chat-bg: #241b20;
+      --shadow: 0 15px 45px rgba(0, 0, 0, .35);
     }
 
     * {
@@ -1824,21 +1840,9 @@
               <i class="fa-solid fa-paper-plane"></i>
             </button>
           </form>
-          <div class="ai-key-box">
-            <label for="geminiKeyInput">Clé Gemini de secours (si l’API Vercel n’est pas disponible)</label>
-            <div class="ai-key-row">
-              <input
-                id="geminiKeyInput"
-                type="password"
-                autocomplete="off"
-                placeholder="Collez votre clé API Gemini"
-              >
-              <button type="button" id="saveGeminiKey">Enregistrer</button>
-            </div>
-          </div>
           <small class="ai-disclaimer">
             Amour AI fournit des conseils généraux et ne remplace pas un professionnel.
-            Créez une clé gratuite sur aistudio.google.com/apikey.
+            Votre clé API reste protégée sur le serveur.
           </small>
         </div>
       </div>
@@ -2282,49 +2286,6 @@ https://luniversdamour.vercel.app
       });
     }
 
-    const GEMINI_MODEL = "gemini-2.5-flash";
-    const geminiKeyInput = document.getElementById("geminiKeyInput");
-    const GEMINI_SYSTEM_PROMPT =
-      "Tu es Amour AI, une assistante romantique francophone. Réponds avec douceur, empathie et des conseils pratiques. Reste concise (maximum 150 mots). Ne prétends pas remplacer un professionnel et encourage la sécurité et le respect en cas de situation inquiétante.";
-
-    geminiKeyInput.value = localStorage.getItem("amourAIGeminiKey") || "";
-
-    document.getElementById("saveGeminiKey").addEventListener("click", () => {
-      const key = geminiKeyInput.value.trim();
-      if (!key) {
-        localStorage.removeItem("amourAIGeminiKey");
-        showToast("Clé Gemini retirée");
-        return;
-      }
-      localStorage.setItem("amourAIGeminiKey", key);
-      showToast("Clé Gemini enregistrée");
-    });
-
-    function buildGeminiContents(conversation) {
-      const contents = [];
-      conversation
-        .filter((item) =>
-          item &&
-          (item.role === "user" || item.role === "assistant" || item.role === "model") &&
-          typeof (item.text || item.content) === "string"
-        )
-        .slice(-12)
-        .forEach((item) => {
-          const role = item.role === "assistant" ? "model" : item.role;
-          const text = String(item.text || item.content).slice(0, 1000);
-          const last = contents[contents.length - 1];
-          if (last && last.role === role) {
-            last.parts[0].text += `\n${text}`;
-          } else {
-            contents.push({ role, parts: [{ text }] });
-          }
-        });
-      while (contents.length && contents[0].role !== "user") {
-        contents.shift();
-      }
-      return contents;
-    }
-
     function getSupabaseConfig() {
       const config = window.LUNIVERS_SUPABASE || {};
       const url = String(config.url || "").replace(/\/$/, "");
@@ -2344,18 +2305,19 @@ https://luniversdamour.vercel.app
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${config.anonKey}`,
+          Authorization: "Bearer " + config.anonKey,
           apikey: config.anonKey
         },
         body: JSON.stringify({ messages })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const error = new Error(data.error || "Une erreur est survenue.");
+        const error = new Error(data.error?.message || data.error || "Une erreur est survenue.");
         error.serverError = response.status >= 500;
         throw error;
       }
-      const reply = data.reply || data.text;
+      const result = data.data || data;
+      const reply = result.reply || result.text;
       if (!reply) {
         throw new Error("Réponse vide de l’assistant.");
       }
@@ -2388,45 +2350,6 @@ https://luniversdamour.vercel.app
       return reply;
     }
 
-    async function askGeminiClient(messages) {
-      const apiKey = (localStorage.getItem("amourAIGeminiKey") || geminiKeyInput.value || "").trim();
-      if (!apiKey) {
-        throw new Error("Collez votre clé Gemini ci-dessous, puis renvoyez votre message.");
-      }
-      const contents = buildGeminiContents(messages);
-      if (!contents.length) {
-        throw new Error("Aucun message utilisateur valide.");
-      }
-      const geminiResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: GEMINI_SYSTEM_PROMPT }] },
-            contents,
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 400
-            }
-          })
-        }
-      );
-      const data = await geminiResponse.json().catch(() => ({}));
-      if (!geminiResponse.ok) {
-        throw new Error(data.error?.message || "Clé Gemini invalide ou quota dépassé.");
-      }
-      const reply = (data.candidates?.[0]?.content?.parts || [])
-        .map((part) => part.text)
-        .filter(Boolean)
-        .join("\n")
-        .trim();
-      if (!reply) {
-        throw new Error("L’assistant n’a pas pu générer une réponse.");
-      }
-      return reply;
-    }
-
     async function askAi(text) {
       addAiMessage(text, "user");
       aiSend.disabled = true;
@@ -2434,25 +2357,7 @@ https://luniversdamour.vercel.app
 
       try {
         let reply;
-        const backends = location.hostname.includes("vercel.app")
-          ? [askServer, askSupabase, askGeminiClient]
-          : [askSupabase, askServer, askGeminiClient];
-        let lastError;
-        for (const backend of backends) {
-          try {
-            reply = await backend(aiConversation);
-            lastError = null;
-            break;
-          } catch (error) {
-            lastError = error;
-            if (error.serverError === false) {
-              throw error;
-            }
-          }
-        }
-        if (!reply) {
-          throw lastError || new Error("Impossible de joindre Amour AI pour le moment.");
-        }
+        reply = await askServer(aiConversation);
         addAiMessage(reply);
       } catch (error) {
         addAiMessage(error.message || "Impossible de joindre Amour AI pour le moment.");

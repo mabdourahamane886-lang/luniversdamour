@@ -1,0 +1,31 @@
+export const APP_NAME = "L’univers d’amour";
+export const MAX_MESSAGE_LENGTH = 3000;
+export const MAX_HISTORY_MESSAGES = 16;
+export const MAX_OUTPUT_TOKENS_DEFAULT = 900;
+export const AI_TIMEOUT_DEFAULT = 30000;
+export const FREE_DAILY_MESSAGES = 20;
+export const GUEST_ID_COOKIE = "lunivers_guest";
+
+export const PLAN_LIMITS = {
+  free: {
+    dailyMessages: FREE_DAILY_MESSAGES,
+    monthlyTokens: 80000,
+    advancedGeneration: false,
+    voiceFeatures: true,
+    memoryEnabled: false,
+    premiumModels: false,
+    maxHistoryDays: 14
+  },
+  premium: {
+    dailyMessages: 200,
+    monthlyTokens: 800000,
+    advancedGeneration: true,
+    voiceFeatures: true,
+    memoryEnabled: true,
+    premiumModels: true,
+    maxHistoryDays: 365
+  }
+};
+
+export const ALLOWED_LANGUAGES = ["fr", "en", "ar", "ha", "dje"];
+export const DEFAULT_LANGUAGE = "fr";
