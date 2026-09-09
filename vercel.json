@@ -3,7 +3,7 @@
   "outputDirectory": "./",
   "functions": {
     "api/chat.js": {
-      "runtime": "nodejs18.x",
+      "runtime": "nodejs24.x",
       "memory": 512
     }
   }
