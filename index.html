@@ -1825,7 +1825,7 @@
             </button>
           </form>
           <div class="ai-key-box">
-            <label for="geminiKeyInput">Clé Gemini de secours (si Supabase n’est pas encore branché)</label>
+            <label for="geminiKeyInput">Clé Gemini de secours (si l’API Vercel n’est pas disponible)</label>
             <div class="ai-key-row">
               <input
                 id="geminiKeyInput"
@@ -2180,7 +2180,7 @@
 ${text}
 
 Découvrez L’univers d’amour ❤️
-https://lunivers-damour.vercel.app
+https://luniversdamour.vercel.app
       `;
 
       const whatsappUrl =
@@ -2391,7 +2391,7 @@ https://lunivers-damour.vercel.app
     async function askGeminiClient(messages) {
       const apiKey = (localStorage.getItem("amourAIGeminiKey") || geminiKeyInput.value || "").trim();
       if (!apiKey) {
-        throw new Error("Le site Vercel est en pause. Collez votre clé Gemini ci-dessous, puis renvoyez votre message.");
+        throw new Error("Collez votre clé Gemini ci-dessous, puis renvoyez votre message.");
       }
       const contents = buildGeminiContents(messages);
       if (!contents.length) {
@@ -2434,20 +2434,24 @@ https://lunivers-damour.vercel.app
 
       try {
         let reply;
-        try {
-          reply = await askSupabase(aiConversation);
-        } catch (supabaseError) {
-          if (supabaseError.serverError === false) {
-            throw supabaseError;
-          }
+        const backends = location.hostname.includes("vercel.app")
+          ? [askServer, askSupabase, askGeminiClient]
+          : [askSupabase, askServer, askGeminiClient];
+        let lastError;
+        for (const backend of backends) {
           try {
-            reply = await askServer(aiConversation);
+            reply = await backend(aiConversation);
+            lastError = null;
+            break;
           } catch (error) {
+            lastError = error;
             if (error.serverError === false) {
               throw error;
             }
-            reply = await askGeminiClient(aiConversation);
           }
+        }
+        if (!reply) {
+          throw lastError || new Error("Impossible de joindre Amour AI pour le moment.");
         }
         addAiMessage(reply);
       } catch (error) {

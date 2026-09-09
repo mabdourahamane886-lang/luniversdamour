@@ -5,6 +5,10 @@
     "api/chat.js": {
       "runtime": "nodejs24.x",
       "memory": 128
+    },
+    "api/health.js": {
+      "runtime": "nodejs24.x",
+      "memory": 128
     }
   }
 }
