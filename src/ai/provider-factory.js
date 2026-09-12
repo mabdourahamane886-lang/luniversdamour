@@ -13,7 +13,7 @@ export function createProviders() {
   const primaryKey = process.env.AI_PRIMARY_API_KEY || process.env.GEMINI_API_KEY;
   const secondaryKey = process.env.AI_SECONDARY_API_KEY || process.env.OPENAI_API_KEY;
   const primaryModel =
-    process.env.AI_PRIMARY_MODEL || process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    process.env.AI_PRIMARY_MODEL || process.env.GEMINI_MODEL || "gemini-3.8-flash";
   const secondaryModel = process.env.AI_SECONDARY_MODEL || "gpt-4o-mini";
 
   const primary = primaryKey
