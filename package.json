@@ -1,12 +1,13 @@
 {
   "name": "luniversdamour",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "build": "node scripts/verify.mjs"
   },
   "engines": {
-    "node": "24.x"
+    "node": ">=22 <25"
   }
 }
