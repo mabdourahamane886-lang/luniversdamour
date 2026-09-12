@@ -43,6 +43,9 @@ export class GeminiProvider extends AIProvider {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
           contents,
+          // Active l'accès aux données Web en temps réel quand Gemini juge
+          // qu'une recherche améliore la réponse.
+          tools: [{ googleSearch: {} }],
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: this.maxOutputTokens
@@ -66,6 +69,13 @@ export class GeminiProvider extends AIProvider {
     if (!text) {
       throw new Error("EMPTY_MODEL_RESPONSE");
     }
-    return { text, provider: this.name, model: this.model };
+
+    const groundingMetadata = data.candidates?.[0]?.groundingMetadata || null;
+    return {
+      text,
+      provider: this.name,
+      model: this.model,
+      groundingMetadata
+    };
   }
 }
