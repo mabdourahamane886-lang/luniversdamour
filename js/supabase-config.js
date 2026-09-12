@@ -69,7 +69,17 @@ window.LUNIVERS_SUPABASE = {
     }
   };
 
+  function removeApiProtectionNotice() {
+    const disclaimer = document.querySelector(".ai-disclaimer");
+    if (!disclaimer) return;
+
+    // Ne pas afficher dans l'interface des informations techniques sur les clés API.
+    disclaimer.textContent = "Amour AI fournit des conseils généraux et ne remplace pas un professionnel.";
+  }
+
   function initAmourAiButton() {
+    removeApiProtectionNotice();
+
     const navMenu = document.querySelector(".nav-menu");
     const aiSection = document.getElementById("amour-ai");
     const aiInput = document.getElementById("aiInput");
