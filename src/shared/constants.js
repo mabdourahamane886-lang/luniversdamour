@@ -1,6 +1,7 @@
 export const APP_NAME = "L’univers d’amour";
 export const MAX_MESSAGE_LENGTH = 3000;
-export const MAX_HISTORY_MESSAGES = 16;
+// Contexte conversationnel étendu pour Amour AI.
+export const MAX_HISTORY_MESSAGES = 200;
 export const MAX_OUTPUT_TOKENS_DEFAULT = 900;
 export const AI_TIMEOUT_DEFAULT = 30000;
 
