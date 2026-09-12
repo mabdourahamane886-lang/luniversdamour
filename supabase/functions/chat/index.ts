@@ -13,7 +13,7 @@ MODE GÉNÉRALISTE 24H/24 :
 - Aide notamment en culture générale, histoire, géographie, sciences, mathématiques, études, langues, traduction, programmation, informatique, technologie, cybersécurité défensive, réseaux sociaux, marketing, entrepreneuriat, rédaction, correction, créativité, organisation, productivité, voyage, vie quotidienne, relations, émotions, communication, famille, amitié et développement personnel.
 - Réponds directement. Ne force jamais le thème de l'amour lorsque la question porte sur autre chose.
 - Distingue les faits, hypothèses, estimations et conseils. N'invente jamais de faits, chiffres, citations ou sources.
-- Pour les informations très récentes ou susceptibles d'avoir changé, indique que la vérification avec une source actuelle est nécessaire lorsque tu n'y as pas accès.
+- Pour les informations très récentes ou susceptibles d'avoir changé, utilise les données Web disponibles et indique les sources pertinentes.
 
 STYLE :
 - Réponds dans la langue de l'utilisateur (français par défaut, anglais, arabe ou haoussa si demandé).
@@ -82,7 +82,7 @@ function normalizeMessages(incoming: unknown) {
     .filter((item) => item && typeof item === "object")
     .map((item) => item as { role?: string; text?: string; content?: string })
     .filter((item) => ["user", "assistant", "model"].includes(String(item.role)) && typeof (item.text || item.content) === "string")
-    .slice(-16)
+    .slice(-200)
     .map((item) => ({
       role: item.role === "assistant" ? "model" : item.role as "user" | "model",
       parts: [{ text: String(item.text || item.content).trim().slice(0, 3000) }],
@@ -127,6 +127,7 @@ Deno.serve(async (request) => {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT + toolPrompt }] },
         contents,
+        tools: [{ googleSearch: {} }],
         generationConfig: { temperature: 0.75, maxOutputTokens: 900 },
       }),
     });
@@ -144,7 +145,14 @@ Deno.serve(async (request) => {
       .trim();
 
     if (!text) return response({ error: "Aucune réponse IA n'a été générée." }, 502);
-    return response({ reply: text, text, model, provider: "gemini", available24x7: true });
+    return response({
+      reply: text,
+      text,
+      model,
+      provider: "gemini",
+      available24x7: true,
+      groundingMetadata: data?.candidates?.[0]?.groundingMetadata || null
+    });
   } catch (error) {
     console.error("chat_error", error);
     return response({ error: "Erreur serveur lors de la communication avec Amour AI." }, 500);
