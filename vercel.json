@@ -1,4 +1,6 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "echo static-site-no-build",
   "outputDirectory": ".",
   "functions": {
     "api/chat.js": {
