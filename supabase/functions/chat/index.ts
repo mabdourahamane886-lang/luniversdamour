@@ -1,157 +1,104 @@
-const MODEL = "gemini-2.5-flash";
-const SYSTEM_PROMPT =
-  "Tu es Amour AI, une assistante romantique francophone. Réponds avec douceur, empathie et des conseils pratiques. Reste concise (maximum 150 mots). Ne prétends pas remplacer un professionnel et encourage la sécurité et le respect en cas de situation inquiétante.";
+const DEFAULT_MODEL = "gemini-2.5-flash";
+const SYSTEM_PROMPT = `Tu es Amour AI, l'assistante conversationnelle de L'univers d'amour.
+Réponds dans la langue de l'utilisateur, avec douceur, clarté et respect.
+Tu aides pour les relations, émotions, messages, idées romantiques et conflits du quotidien.
+Ne présente jamais tes hypothèses sur les intentions d'une personne comme des faits.
+Refuse la violence, la vengeance, le harcèlement, le stalking, la surveillance d'un partenaire et toute aide qui contourne le consentement.
+En cas de danger immédiat, recommande un lieu sûr, une personne de confiance et les services d'urgence locaux.
+Ne demande ni ne mémorise de mot de passe, donnée bancaire, adresse précise ou donnée médicale sensible.
+Reste généralement entre 80 et 180 mots, sauf pour un poème ou une demande explicitement plus longue.`;
+
+const TOOL_PROMPTS: Record<string, string> = {
+  message: "Rédige un message prêt à envoyer, sincère, respectueux et naturel. Donne une version principale et une version courte.",
+  poem: "Écris un poème romantique court de 8 à 16 vers, original et sans clichés excessifs.",
+  analyze: "Analyse le ton, les ambiguïtés et plusieurs interprétations possibles. Ne présente aucune intention supposée comme une certitude.",
+  advice: "Structure le conseil en situation comprise, hypothèses raisonnables, prochaine action et phrase possible à envoyer.",
+  date: "Propose trois idées de rendez-vous réalistes selon les paramètres fournis (budget, durée, lieu et ambiance).",
+  quiz: "Interprète le résultat du quiz avec tact et donne deux pistes concrètes pour améliorer la communication."
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Content-Type": "application/json",
 };
 
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-    },
-  });
+function response(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
 }
 
-function buildContents(incoming: unknown[]) {
-  const safeMessages = incoming
-    .filter((item) => {
-      if (!item || typeof item !== "object") return false;
-      const message = item as { role?: string; text?: string; content?: string };
-      return (
-        (message.role === "user" ||
-          message.role === "assistant" ||
-          message.role === "model") &&
-        typeof (message.text || message.content) === "string"
-      );
-    })
+function normalizeMessages(incoming: unknown) {
+  if (!Array.isArray(incoming)) return [];
+  const messages = incoming
+    .filter((item) => item && typeof item === "object")
+    .map((item) => item as { role?: string; text?: string; content?: string })
+    .filter((item) => ["user", "assistant", "model"].includes(String(item.role)) && typeof (item.text || item.content) === "string")
     .slice(-12)
-    .map((item) => {
-      const message = item as { role: string; text?: string; content?: string };
-      return {
-        role: message.role === "assistant" ? "model" : message.role,
-        parts: [{ text: String(message.text || message.content).slice(0, 1000) }],
-      };
-    });
+    .map((item) => ({
+      role: item.role === "assistant" ? "model" : item.role as "user" | "model",
+      parts: [{ text: String(item.text || item.content).trim().slice(0, 1600) }],
+    }))
+    .filter((item) => item.parts[0].text.length > 0);
 
-  const contents: { role: string; parts: { text: string }[] }[] = [];
-  for (const item of safeMessages) {
-    const last = contents[contents.length - 1];
-    if (last && last.role === item.role) {
-      last.parts[0].text += `\n${item.parts[0].text}`;
-    } else {
-      contents.push({
-        role: item.role,
-        parts: [{ text: item.parts[0].text }],
-      });
-    }
-  }
-
-  while (contents.length && contents[0].role !== "user") {
-    contents.shift();
-  }
-
-  return contents;
+  while (messages.length && messages[0].role !== "user") messages.shift();
+  return messages;
 }
 
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
-  if (request.method !== "POST") {
-    return jsonResponse({ error: "Méthode non autorisée." }, 405);
-  }
+  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (request.method !== "POST") return response({ error: "Méthode non autorisée." }, 405);
 
   const apiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!apiKey) {
-    return jsonResponse({
-      error: "La clé GEMINI_API_KEY n'est pas configurée dans Supabase.",
-    }, 500);
-  }
+  if (!apiKey) return response({ error: "GEMINI_API_KEY n'est pas configurée dans Supabase." }, 500);
 
-  let body: {
-    messages?: unknown[];
-    conversation?: unknown[];
-    message?: string;
-  } = {};
-
+  let body: { messages?: unknown[]; conversation?: unknown[]; message?: string; tool?: string } = {};
   try {
     body = await request.json();
   } catch {
-    return jsonResponse({ error: "Corps de la requête invalide." }, 400);
+    return response({ error: "Corps JSON invalide." }, 400);
   }
 
-  const incomingMessages = Array.isArray(body.messages)
+  const incoming = Array.isArray(body.messages)
     ? body.messages
     : [
         ...(Array.isArray(body.conversation) ? body.conversation : []),
-        ...(typeof body.message === "string"
-          ? [{ role: "user", content: body.message }]
-          : []),
+        ...(typeof body.message === "string" ? [{ role: "user", content: body.message }] : []),
       ];
 
-  if (incomingMessages.length === 0) {
-    return jsonResponse({ error: "La conversation est requise." }, 400);
-  }
+  const contents = normalizeMessages(incoming);
+  if (!contents.length) return response({ error: "La conversation est requise." }, 400);
 
-  const contents = buildContents(incomingMessages);
-  if (contents.length === 0) {
-    return jsonResponse({ error: "Aucun message utilisateur valide." }, 400);
-  }
+  const toolPrompt = body.tool && TOOL_PROMPTS[body.tool] ? `\n\nMode demandé : ${TOOL_PROMPTS[body.tool]}` : "";
+  const model = Deno.env.get("GEMINI_MODEL") || DEFAULT_MODEL;
 
   try {
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 400,
-          },
-        }),
-      },
-    );
+    const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-goog-api-key": apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT + toolPrompt }] },
+        contents,
+        generationConfig: { temperature: 0.75, maxOutputTokens: 700 },
+      }),
+    });
 
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error(`Gemini API ${geminiResponse.status}:`, errorText.slice(0, 300));
-      return jsonResponse({
-        error: "L'assistant est temporairement indisponible. Veuillez réessayer.",
-      }, 502);
+    if (!upstream.ok) {
+      console.error("gemini_error", upstream.status, (await upstream.text()).slice(0, 500));
+      return response({ error: "L'assistant est temporairement indisponible." }, 502);
     }
 
-    const data = await geminiResponse.json();
-    const text = (data.candidates?.[0]?.content?.parts || [])
-      .map((part: { text?: string }) => part.text)
+    const data = await upstream.json();
+    const text = (data?.candidates?.[0]?.content?.parts || [])
+      .map((part: { text?: string }) => part.text || "")
       .filter(Boolean)
       .join("\n")
       .trim();
 
-    if (!text) {
-      return jsonResponse({
-        error: "L'assistant n'a pas pu générer une réponse.",
-      }, 502);
-    }
-
-    return jsonResponse({ reply: text, text });
+    if (!text) return response({ error: "Aucune réponse IA n'a été générée." }, 502);
+    return response({ reply: text, text, model, provider: "gemini" });
   } catch (error) {
-    console.error("API Error:", error);
-    return jsonResponse({
-      error: "Erreur serveur lors de la communication avec l'assistant.",
-    }, 500);
+    console.error("chat_error", error);
+    return response({ error: "Erreur serveur lors de la communication avec Amour AI." }, 500);
   }
 });
