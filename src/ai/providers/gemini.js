@@ -4,7 +4,7 @@ export class GeminiProvider extends AIProvider {
   constructor({ apiKey, model, timeoutMs, maxOutputTokens }) {
     super();
     this.apiKey = apiKey;
-    this.model = model || "gemini-2.5-flash";
+    this.model = model || "gemini-3.8-flash";
     this.timeoutMs = timeoutMs;
     this.maxOutputTokens = maxOutputTokens;
   }
