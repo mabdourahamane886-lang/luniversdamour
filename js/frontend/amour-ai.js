@@ -28,7 +28,7 @@
   if (!els.form || !els.input || !els.messages) return;
 
   const welcome =
-    "Bonjour ❤️ Je suis Amour AI. Je peux vous aider à comprendre une situation, préparer un message, trouver les bons mots, écrire un poème ou réfléchir à une relation avec respect et douceur.";
+    "Bonjour ❤️ Je suis Amour AI, l'assistante de L'univers d'amour. Je peux vous aider à comprendre une situation, préparer un message, trouver les bons mots, écrire un poème ou réfléchir à une relation avec respect et douceur.";
 
   const toast = window.showSiteToast || function (message) {
     const node = document.getElementById("toast");
@@ -38,6 +38,23 @@
     node.classList.add("show");
     window.setTimeout(() => node.classList.remove("show"), 2600);
   };
+
+  function normalizeAiText(value) {
+    if (typeof value === "string") return value.trim();
+    if (value == null) return "";
+    if (Array.isArray(value)) return value.map(normalizeAiText).filter(Boolean).join("\n").trim();
+    if (typeof value === "object") {
+      const direct = ["text", "content", "reply", "message", "output_text"].find((key) => typeof value[key] === "string");
+      if (direct) return value[direct].trim();
+      for (const key of ["output", "response", "result", "data"]) {
+        if (value[key] != null) {
+          const nested = normalizeAiText(value[key]);
+          if (nested) return nested;
+        }
+      }
+    }
+    return String(value).trim();
+  }
 
   function uid() {
     return "ai_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -102,7 +119,7 @@
     }
     els.messages.innerHTML = messages.slice(-80).map((message, index) => {
       const user = message.role === "user";
-      const text = message.text || message.content || "";
+      const text = normalizeAiText(message.text ?? message.content);
       return `
         <div class="ai-message ${user ? "ai-message-user" : "ai-message-assistant"}" data-message-index="${index}">
           <div class="message-avatar">${user ? "💗" : "✨"}</div>
@@ -125,7 +142,7 @@
     if (!els.convList) return;
     const q = String(els.search?.value || "").trim().toLowerCase();
     const rows = state.conversations
-      .filter((item) => !q || String(item.title).toLowerCase().includes(q) || (item.messages || []).some((m) => String(m.text || "").toLowerCase().includes(q)))
+      .filter((item) => !q || String(item.title).toLowerCase().includes(q) || (item.messages || []).some((m) => normalizeAiText(m.text || m.content).toLowerCase().includes(q)))
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .map((item) => `
         <button type="button" class="ai-conv-item ${item.id === state.activeId ? "active" : ""}" data-conv-id="${item.id}">
@@ -141,11 +158,12 @@
   function addMessage(role, text) {
     const conversation = activeConversation();
     conversation.messages = Array.isArray(conversation.messages) ? conversation.messages : [];
-    conversation.messages.push({ role, text: String(text), createdAt: Date.now() });
+    const normalized = normalizeAiText(text);
+    conversation.messages.push({ role, text: normalized, createdAt: Date.now() });
     conversation.messages = conversation.messages.slice(-MAX_HISTORY);
     conversation.updatedAt = Date.now();
     if (role === "user" && conversation.messages.filter((m) => m.role === "user").length === 1) {
-      conversation.title = String(text).replace(/\s+/g, " ").slice(0, 48) || "Conversation";
+      conversation.title = normalized.replace(/\s+/g, " ").slice(0, 48) || "Conversation";
     }
     persist();
   }
@@ -181,13 +199,15 @@
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data?.error || "Supabase indisponible.");
-    return data.reply || data.text;
+    return normalizeAiText(data.reply ?? data.text);
   }
 
   async function generate(messages, tool) {
     try {
       const data = await postJson("/api/chat", { messages, tool });
-      return { text: data.reply || data.text, provider: data.provider || "vercel" };
+      const text = normalizeAiText(data.reply ?? data.text);
+      if (text) return { text, provider: data.provider || "vercel" };
+      throw new Error("Réponse IA vide.");
     } catch (primaryError) {
       try {
         const text = await askSupabase(messages, tool);
@@ -210,7 +230,7 @@
     const conversation = activeConversation();
     const history = (conversation.messages || []).slice(-12).map((item) => ({
       role: item.role,
-      content: item.text || item.content || ""
+      content: normalizeAiText(item.text || item.content)
     }));
     history.push({ role: "user", content: value });
     lastRequest = { messages: history, tool: els.tool?.value || "advice" };
@@ -265,7 +285,7 @@
       return;
     }
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(normalizeAiText(text));
     utterance.lang = document.documentElement.lang || "fr-FR";
     utterance.rate = 0.95;
     window.speechSynthesis.speak(utterance);
@@ -292,7 +312,7 @@
     const visible = messages.slice(-80);
     const message = visible[index];
     if (!message) return;
-    const text = message.text || message.content || "";
+    const text = normalizeAiText(message.text ?? message.content);
     const action = button.dataset.act;
 
     if (action === "copy") navigator.clipboard?.writeText(text).then(() => toast("Copié."));
@@ -350,7 +370,7 @@
     });
   }
 
-  if (els.voice && "SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
+  if (els.voice && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     els.voice.addEventListener("click", () => {
       const recognition = new Recognition();

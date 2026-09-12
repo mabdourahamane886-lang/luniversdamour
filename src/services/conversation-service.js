@@ -6,6 +6,23 @@ import { AppError } from "../shared/errors.js";
 import { redactForLogs } from "../ai/memory.js";
 import { buildMemoryContext, extractExplicitMemories, loadMemories, saveMemories } from "./ai-memory-service.js";
 
+function normalizeAiText(value) {
+  if (typeof value === "string") return value.trim();
+  if (value == null) return "";
+  if (Array.isArray(value)) return value.map(normalizeAiText).filter(Boolean).join("\n").trim();
+  if (typeof value === "object") {
+    const direct = ["text", "content", "reply", "message", "output_text"].find((key) => typeof value[key] === "string");
+    if (direct) return value[direct].trim();
+    for (const key of ["output", "response", "result", "data"]) {
+      if (value[key] != null) {
+        const nested = normalizeAiText(value[key]);
+        if (nested) return nested;
+      }
+    }
+  }
+  return String(value).trim();
+}
+
 export async function runGeneration({ payload, tool }) {
   const messages = normalizeMessages(payload);
   const lastUser = [...messages].reverse().find((item) => item.role === "user");
@@ -40,6 +57,10 @@ export async function runGeneration({ payload, tool }) {
     systemPrompt: SYSTEM_PROMPT + memoryContext + extra,
     messages
   });
+  const text = normalizeAiText(result?.text ?? result);
+  if (!text) {
+    throw new Error("EMPTY_MODEL_RESPONSE");
+  }
 
   if (memoryEnabled) {
     const explicitMemories = extractExplicitMemories(lastUser.content, true);
@@ -50,7 +71,7 @@ export async function runGeneration({ payload, tool }) {
 
   return {
     blocked: false,
-    text: result.text,
+    text,
     provider: result.provider,
     model: result.model,
     promptVersion: PROMPT_VERSION

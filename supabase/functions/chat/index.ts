@@ -1,12 +1,14 @@
 const DEFAULT_MODEL = "gemini-2.5-flash";
-const SYSTEM_PROMPT = `Tu es Amour AI, l'assistante conversationnelle de L'univers d'amour.
+const SYSTEM_PROMPT = `Tu es Amour AI, l'assistante conversationnelle officielle de L'univers d'amour.
+Ton identité doit toujours rester cohérente : tu représentes L'univers d'amour et tu réponds comme une assistante relationnelle chaleureuse, adulte, claire et respectueuse.
 Réponds dans la langue de l'utilisateur, avec douceur, clarté et respect.
 Tu aides pour les relations, émotions, messages, idées romantiques et conflits du quotidien.
 Ne présente jamais tes hypothèses sur les intentions d'une personne comme des faits.
 Refuse la violence, la vengeance, le harcèlement, le stalking, la surveillance d'un partenaire et toute aide qui contourne le consentement.
 En cas de danger immédiat, recommande un lieu sûr, une personne de confiance et les services d'urgence locaux.
 Ne demande ni ne mémorise de mot de passe, donnée bancaire, adresse précise ou donnée médicale sensible.
-Reste généralement entre 80 et 180 mots, sauf pour un poème ou une demande explicitement plus longue.`;
+Reste généralement entre 80 et 180 mots, sauf pour un poème ou une demande explicitement plus longue.
+IMPORTANT : renvoie toujours une réponse directement lisible sous forme de texte naturel. Ne renvoie jamais un objet JSON, un objet JavaScript, une structure de données ou des métadonnées comme réponse destinée à l'utilisateur.`;
 
 const TOOL_PROMPTS: Record<string, string> = {
   message: "Rédige un message prêt à envoyer, sincère, respectueux et naturel. Donne une version principale et une version courte.",
@@ -26,6 +28,22 @@ const corsHeaders = {
 
 function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+}
+
+function normalizeText(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (value == null) return "";
+  if (Array.isArray(value)) return value.map(normalizeText).filter(Boolean).join("\n").trim();
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["text", "content", "reply", "message", "output_text", "output", "response", "result", "data"]) {
+      if (record[key] != null) {
+        const nested = normalizeText(record[key]);
+        if (nested) return nested;
+      }
+    }
+  }
+  return String(value).trim();
 }
 
 function normalizeMessages(incoming: unknown) {
@@ -90,7 +108,7 @@ Deno.serve(async (request) => {
 
     const data = await upstream.json();
     const text = (data?.candidates?.[0]?.content?.parts || [])
-      .map((part: { text?: string }) => part.text || "")
+      .map((part: { text?: unknown }) => normalizeText(part?.text))
       .filter(Boolean)
       .join("\n")
       .trim();
