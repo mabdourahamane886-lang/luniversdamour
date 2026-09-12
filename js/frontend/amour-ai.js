@@ -3,9 +3,10 @@
 
   const STORAGE_KEY = "luniversdamour.ai.v2";
   const MAX_INPUT = 3000;
-  // Conserve jusqu'à 200 messages localement et transmet jusqu'à 200 messages à l'IA.
   const MAX_HISTORY = 200;
   const MODEL_CONTEXT_MESSAGES = 200;
+  const DEFAULT_SUPABASE_URL = "https://bawryduhgopvxynqmiyo.supabase.co";
+  const DEFAULT_SUPABASE_KEY = "sb_publishable_qZ9W7AdHI1zwGEMpDx2QDQ_8O6tjV1B";
 
   const els = {
     form: document.getElementById("aiForm"),
@@ -30,7 +31,7 @@
   if (!els.form || !els.input || !els.messages) return;
 
   const welcome =
-    "Bonjour ❤️ Je suis Amour AI, l'assistante de L'univers d'amour. Je peux vous aider à comprendre une situation, préparer un message, trouver les bons mots, écrire un poème ou réfléchir à une relation avec respect et douceur.";
+    "Bonjour ❤️ Je suis Amour AI, l'assistante de L'univers d'amour. Je peux répondre à vos questions, vous aider à comprendre une situation, préparer un message, étudier un sujet, résoudre un problème technique ou réfléchir avec vous avec respect et douceur.";
 
   const toast = window.showSiteToast || function (message) {
     const node = document.getElementById("toast");
@@ -187,9 +188,8 @@
 
   async function askSupabase(messages, tool) {
     const config = window.LUNIVERS_SUPABASE || {};
-    const url = String(config.url || "").replace(/\/$/, "");
-    const key = String(config.anonKey || "").trim();
-    if (!url || !key || url.includes("YOUR_PROJECT")) throw new Error("SUPABASE_NOT_CONFIGURED");
+    const url = String(config.url || DEFAULT_SUPABASE_URL).replace(/\/$/, "");
+    const key = String(config.anonKey || DEFAULT_SUPABASE_KEY).trim();
     const response = await fetch(`${url}/functions/v1/chat`, {
       method: "POST",
       headers: {
@@ -384,11 +384,10 @@
       };
       recognition.start();
     });
-    els.micStop?.addEventListener("click", () => toast("Dictée arrêtée."));
+    els.micStop?.addEventListener("click", () => {});
   }
 
   renderMessages();
   renderHistory();
   updateCharCount();
-  persist();
 })();
