@@ -1,4 +1,4 @@
-name: Deploy GitHub Pages
+name: GitHub Pages Validation
 
 on:
   push:
@@ -7,33 +7,27 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-validation
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Prepare site
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate frontend files
         run: |
-          rm -rf _site
-          mkdir -p _site
-          cp index.html _site/
-          cp -R js _site/js
-          touch _site/.nojekyll
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          set -e
+          test -f index.html
+          test -f js/supabase-config.js
+          test -f js/frontend/amour-ai.js
+          test -d js
+          grep -q "bawryduhgopvxynqmiyo.supabase.co" js/supabase-config.js
+          echo "✅ index.html présent"
+          echo "✅ Supabase configuré"
+          echo "✅ Amour AI présente"
+          echo "✅ Frontend L'univers d'amour valide"
