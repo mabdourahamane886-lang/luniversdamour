@@ -1,11 +1,12 @@
 {
   "name": "luniversdamour",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "build": "node -e \"console.log('L’univers d’amour: build OK')\""
+    "start": "node server.js",
+    "build": "node scripts/verify.mjs"
   },
   "engines": {
     "node": "22.x"
