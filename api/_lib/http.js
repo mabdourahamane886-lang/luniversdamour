@@ -49,7 +49,10 @@ export function clientId(request) {
   return (ip || request.socket?.remoteAddress || "guest").trim() || "guest";
 }
 
-export function rateLimit(request, limit = 30, windowMs = 60 * 60 * 1000) {
+export function rateLimit(request, limit = 300, windowMs = 60 * 60 * 1000) {
+  // Backward compatibility: api/chat.js previously passed 40 as its hourly limit.
+  // Keep that call safe while raising the actual AI hourly capacity to 300.
+  const effectiveLimit = limit === 40 ? 300 : limit;
   const id = clientId(request);
   const now = Date.now();
   const item = rateBuckets.get(id) || { count: 0, start: now };
@@ -59,7 +62,7 @@ export function rateLimit(request, limit = 30, windowMs = 60 * 60 * 1000) {
   }
   item.count += 1;
   rateBuckets.set(id, item);
-  return item.count <= limit;
+  return item.count <= effectiveLimit;
 }
 
 export function requireAdmin(request) {
