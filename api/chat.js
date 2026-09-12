@@ -1,7 +1,25 @@
+import { randomUUID } from "node:crypto";
 import { handlePreflight, fail, json, readJson, rateLimit, clientId } from "./_lib/http.js";
 import { runGeneration } from "../src/services/conversation-service.js";
 import { consumeDailyQuota, getPlanLimits } from "../src/services/plan.js";
 import { AppError } from "../src/shared/errors.js";
+
+function readSessionCookie(request) {
+  const cookie = String(request.headers.cookie || "");
+  const match = cookie.match(/(?:^|;)\s*amour_session=([A-Za-z0-9_-]{16,160})(?:;|$)/);
+  return match ? match[1] : "";
+}
+
+function ensureSessionId(request, response) {
+  const existing = readSessionCookie(request);
+  if (existing) return existing;
+  const sessionId = randomUUID().replace(/-/g, "");
+  response.setHeader(
+    "Set-Cookie",
+    `amour_session=${sessionId}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax; Secure`
+  );
+  return sessionId;
+}
 
 export default async function handler(request, response) {
   if (handlePreflight(request, response)) return;
@@ -20,6 +38,9 @@ export default async function handler(request, response) {
 
   try {
     const payload = await readJson(request);
+    payload.sessionId = payload.sessionId || ensureSessionId(request, response);
+    payload.memoryEnabled = payload.memoryEnabled !== false;
+
     const result = await runGeneration({ payload, tool: payload.tool });
     const data = {
       reply: result.text,
@@ -28,17 +49,18 @@ export default async function handler(request, response) {
       model: result.model,
       blocked: result.blocked,
       promptVersion: result.promptVersion,
+      memoryEnabled: payload.memoryEnabled,
       usage: quota
     };
 
-    // Keep both shapes for compatibility with the current frontend and newer clients.
     return json(response, 200, {
       success: true,
       data,
       reply: result.text,
       text: result.text,
       provider: result.provider,
-      model: result.model
+      model: result.model,
+      memoryEnabled: payload.memoryEnabled
     });
   } catch (error) {
     if (error instanceof AppError) {
