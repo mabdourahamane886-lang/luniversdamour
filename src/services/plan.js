@@ -8,6 +8,11 @@ export function getPlanLimits(user = {}) {
 const buckets = new Map();
 
 export function consumeDailyQuota(userId, limit) {
+  // null = no daily message quota. Abuse protection remains enforced at HTTP level.
+  if (limit == null) {
+    return { allowed: true, used: null, limit: null };
+  }
+
   const day = new Date().toISOString().slice(0, 10);
   const key = `${userId}:${day}`;
   const current = buckets.get(key) || 0;
