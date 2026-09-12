@@ -1,4 +1,4 @@
-import { handlePreflight, fail, ok, readJson, rateLimit, clientId } from "./_lib/http.js";
+import { handlePreflight, fail, json, readJson, rateLimit, clientId } from "./_lib/http.js";
 import { runGeneration } from "../src/services/conversation-service.js";
 import { consumeDailyQuota, getPlanLimits } from "../src/services/plan.js";
 import { AppError } from "../src/shared/errors.js";
@@ -21,7 +21,7 @@ export default async function handler(request, response) {
   try {
     const payload = await readJson(request);
     const result = await runGeneration({ payload, tool: payload.tool });
-    return ok(response, {
+    const data = {
       reply: result.text,
       text: result.text,
       provider: result.provider,
@@ -29,6 +29,16 @@ export default async function handler(request, response) {
       blocked: result.blocked,
       promptVersion: result.promptVersion,
       usage: quota
+    };
+
+    // Keep both shapes for compatibility with the current frontend and newer clients.
+    return json(response, 200, {
+      success: true,
+      data,
+      reply: result.text,
+      text: result.text,
+      provider: result.provider,
+      model: result.model
     });
   } catch (error) {
     if (error instanceof AppError) {
