@@ -3,7 +3,9 @@
 
   const STORAGE_KEY = "luniversdamour.ai.v2";
   const MAX_INPUT = 3000;
-  const MAX_HISTORY = 24;
+  // Conserve jusqu'à 200 messages localement et transmet jusqu'à 200 messages à l'IA.
+  const MAX_HISTORY = 200;
+  const MODEL_CONTEXT_MESSAGES = 200;
 
   const els = {
     form: document.getElementById("aiForm"),
@@ -228,12 +230,12 @@
     sending = true;
     setError("");
     const conversation = activeConversation();
-    const history = (conversation.messages || []).slice(-12).map((item) => ({
+    const history = (conversation.messages || []).slice(-MODEL_CONTEXT_MESSAGES).map((item) => ({
       role: item.role,
       content: normalizeAiText(item.text || item.content)
     }));
     history.push({ role: "user", content: value });
-    lastRequest = { messages: history, tool: els.tool?.value || "advice" };
+    lastRequest = { messages: history.slice(-MODEL_CONTEXT_MESSAGES), tool: els.tool?.value || "advice" };
 
     addMessage("user", value);
     renderMessages();
@@ -243,7 +245,7 @@
     setThinking(true);
 
     try {
-      const result = await generate(history, lastRequest.tool);
+      const result = await generate(lastRequest.messages, lastRequest.tool);
       if (!result.text) throw new Error("Réponse IA vide.");
       addMessage("assistant", result.text);
       renderMessages();
