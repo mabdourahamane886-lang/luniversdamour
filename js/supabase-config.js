@@ -6,6 +6,69 @@ window.LUNIVERS_SUPABASE = {
 (function () {
   "use strict";
 
+  // Le frontend historique appelle encore /api/chat. On le route directement
+  // vers l'Edge Function Supabase afin que l'IA fonctionne même sans nouveau
+  // build Vercel. Les autres requêtes fetch restent inchangées.
+  const nativeFetch = window.fetch.bind(window);
+
+  window.fetch = async function (input, init) {
+    const requestUrl = typeof input === "string" ? input : (input && input.url) || "";
+    const isChatApi = /(^|\/)api\/chat(?:\?|$)/.test(requestUrl);
+
+    if (!isChatApi) {
+      return nativeFetch(input, init);
+    }
+
+    const config = window.LUNIVERS_SUPABASE || {};
+    const supabaseUrl = String(config.url || "").replace(/\/$/, "");
+    const anonKey = String(config.anonKey || "").trim();
+
+    if (!supabaseUrl || !anonKey) {
+      return new Response(JSON.stringify({ error: "Supabase n'est pas configuré." }), {
+        status: 503,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    let payload = {};
+    try {
+      payload = init && typeof init.body === "string" ? JSON.parse(init.body) : {};
+    } catch (_) {
+      payload = {};
+    }
+
+    try {
+      const upstream = await nativeFetch(`${supabaseUrl}/functions/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await upstream.json().catch(() => ({
+        error: "Réponse Supabase invalide."
+      }));
+
+      return new Response(JSON.stringify(data), {
+        status: upstream.status,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store"
+        }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        error: error?.message || "Supabase indisponible."
+      }), {
+        status: 503,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  };
+
   function initAmourAiButton() {
     const navMenu = document.querySelector(".nav-menu");
     const aiSection = document.getElementById("amour-ai");
