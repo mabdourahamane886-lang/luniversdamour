@@ -15,10 +15,10 @@ export function createProviders() {
   const primaryKey = process.env.AI_PRIMARY_API_KEY || process.env.GEMINI_API_KEY;
   const secondaryKey = process.env.AI_SECONDARY_API_KEY || process.env.OPENAI_API_KEY;
   const primaryModel = process.env.AI_PRIMARY_MODEL || process.env.GEMINI_MODEL || "gemini-3.8-flash";
-  const secondaryModel = process.env.AI_SECONDARY_MODEL || "gpt-4o-mini";
-  const compatBaseUrl = process.env.AI_COMPAT_BASE_URL || "https://api.openai.com/v1";
-  const compatKey = process.env.AI_COMPAT_API_KEY || secondaryKey;
-  const compatModel = process.env.AI_COMPAT_MODEL || secondaryModel;
+  const compatBaseUrl = process.env.AI_COMPAT_BASE_URL || "https://router.huggingface.co/v1";
+  const compatKey = process.env.AI_COMPAT_API_KEY || process.env.HF_TOKEN || secondaryKey;
+  const compatModel = process.env.AI_COMPAT_MODEL || "openai/gpt-oss-120b:fastest";
+  const secondaryModel = process.env.AI_SECONDARY_MODEL || compatModel;
 
   const local = new AmourCoreProvider();
   const primary = primaryKey
@@ -35,13 +35,12 @@ export function createProviders() {
     : null;
 
   if (mode === "local") return { providers: [local], local };
-  if (mode === "hybrid") return { providers: [local, compatible, primary].filter(Boolean), local };
   if (mode === "compat") return { providers: [compatible, local].filter(Boolean), local };
   if (mode === "gemini") return { providers: [primary, local].filter(Boolean), local };
   return { providers: [local, compatible, primary].filter(Boolean), local };
 }
 
-export async function generateWithFallback({ systemPrompt, messages }) {
+export async function generateWithFallback({ systemPrompt, messages, knowledge }) {
   const { providers, local } = createProviders();
   if (!providers.length) {
     const error = new Error("NO_PROVIDER");
@@ -52,7 +51,7 @@ export async function generateWithFallback({ systemPrompt, messages }) {
   const errors = [];
   for (const provider of providers) {
     try {
-      return await provider.generateText({ systemPrompt, messages });
+      return await provider.generateText({ systemPrompt, messages, knowledge });
     } catch (error) {
       errors.push(provider.name);
       console.error("provider_fallback", provider.name, error.message);
