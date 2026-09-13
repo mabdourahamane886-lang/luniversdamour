@@ -4,8 +4,8 @@ export class GeminiProvider extends AIProvider {
   constructor({ apiKey, model, fallbackModel, timeoutMs, maxOutputTokens }) {
     super();
     this.apiKey = apiKey;
-    this.model = model || "gemini-2.5-flash";
-    this.fallbackModel = fallbackModel || "gemini-2.5-flash-lite";
+    this.model = model || "gemini-3.8-flash";
+    this.fallbackModel = fallbackModel || "gemini-3.5-flash-lite";
     this.timeoutMs = timeoutMs;
     this.maxOutputTokens = maxOutputTokens;
   }
@@ -57,7 +57,7 @@ export class GeminiProvider extends AIProvider {
     const response = await withTimeout(request, this.timeoutMs);
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("gemini_provider_error", response.status, errorText.slice(0, 300));
+      console.error("gemini_provider_error", response.status, errorText.slice(0, 500));
       throw new Error(`GEMINI_${response.status}`);
     }
 
