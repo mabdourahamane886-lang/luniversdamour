@@ -26,6 +26,7 @@ jobs:
           mkdir -p _site
           cp index.html _site/index.html
           cp modele-v2.html _site/modele-v2.html
+          cp modele-v3.html _site/modele-v3.html
           cp amour-ai.html _site/amour-ai.html
           cp -R js _site/js
           touch _site/.nojekyll
