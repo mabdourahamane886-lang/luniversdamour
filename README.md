@@ -18,7 +18,7 @@ Dans **Vercel → Settings/Paramètres → Environment Variables/Variables d’e
 
 ```text
 AI_PRIMARY_API_KEY=votre_cle_gemini
-AI_PRIMARY_MODEL=gemini-2.5-flash
+AI_PRIMARY_MODEL=gemini-3.8-flash
 AI_SECONDARY_API_KEY=votre_cle_openai
 AI_SECONDARY_MODEL=gpt-4o-mini
 ```
@@ -64,6 +64,10 @@ Les réponses JSON de l’API utilisent la forme :
 }
 ```
 
+## Supabase
+
+Le projet Supabase actif est `okdohokhlkxrmxpevees`. Il contient maintenant la table `ai_memories` protégée par RLS pour la mémoire explicite de l'assistant. Le navigateur utilise uniquement une clé publishable ; la clé `service_role` reste côté serveur.
+
 ## Sécurité
 
 - Les secrets sont lus avec `process.env` côté serveur.
@@ -80,4 +84,5 @@ api/_lib/http.js             # Validation HTTP, CORS et quotas
 src/ai/                      # Fournisseurs, prompts et modération
 src/services/                # Quotas et logique métier
 js/frontend/                 # Modules frontend complémentaires
+supabase/migrations/         # Schéma mémoire Amour AI
 ```
