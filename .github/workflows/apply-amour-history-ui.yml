@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   patch:
-    if: ${{ !contains(github.event.head_commit.message, 'feat(ai): organize conversation history like ChatGPT') && !contains(github.event.head_commit.message, 'fix(ai): clear active conversation after leaving') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -197,5 +196,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add js/frontend/amour-ai.js
           git rm .github/workflows/apply-amour-history-ui.yml
-          git commit -m "fix(ai): clear active conversation after leaving"
+          git commit -m "fix(ai): clean conversation view and history"
           git push
