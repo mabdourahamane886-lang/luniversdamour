@@ -34,15 +34,15 @@ export function createProviders() {
       })
     : null;
 
-  if (mode === "local") return { providers: [local] };
-  if (mode === "hybrid") return { providers: [local, compatible, primary].filter(Boolean) };
-  if (mode === "compat") return { providers: [compatible, local].filter(Boolean) };
-  if (mode === "gemini") return { providers: [primary, local].filter(Boolean) };
-  return { providers: [local, compatible, primary].filter(Boolean) };
+  if (mode === "local") return { providers: [local], local };
+  if (mode === "hybrid") return { providers: [local, compatible, primary].filter(Boolean), local };
+  if (mode === "compat") return { providers: [compatible, local].filter(Boolean), local };
+  if (mode === "gemini") return { providers: [primary, local].filter(Boolean), local };
+  return { providers: [local, compatible, primary].filter(Boolean), local };
 }
 
 export async function generateWithFallback({ systemPrompt, messages }) {
-  const { providers } = createProviders();
+  const { providers, local } = createProviders();
   if (!providers.length) {
     const error = new Error("NO_PROVIDER");
     error.status = 503;
@@ -59,8 +59,11 @@ export async function generateWithFallback({ systemPrompt, messages }) {
     }
   }
 
-  const error = new Error("ALL_PROVIDERS_FAILED");
-  error.status = 502;
-  error.tried = errors;
-  throw error;
+  return {
+    text: local.fallbackText(),
+    provider: local.name,
+    model: "amour-core-v1",
+    fallback: true,
+    tried: errors
+  };
 }
