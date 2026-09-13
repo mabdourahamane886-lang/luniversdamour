@@ -116,6 +116,10 @@ function buildKnowledgeAnswer(knowledge, question) {
   return `${first.content}\n\nApplication à ta situation : explique-moi ce qui s’est passé concrètement et je peux t’aider à adapter ce principe.`;
 }
 
+function buildReflectiveFallback(question) {
+  return `Réponse directe : je peux examiner ta question à partir des éléments disponibles, mais je ne dois pas inventer un fait que je ne peux pas vérifier.\n\nNiveau de certitude : faible tant que je n’ai pas le contexte ou les données nécessaires.\n\nHypothèses ou limites : ta question est « ${question} ». Plusieurs interprétations peuvent être possibles. Pour être utile, je dois distinguer ce qui est observable, ce qui est probable et ce qui reste inconnu.\n\nÉtape suivante : donne-moi les faits, le contexte ou le texte précis sur lequel tu veux que je réfléchisse, et je l’analyserai point par point.`;
+}
+
 export class AmourCoreProvider extends AIProvider {
   get name() {
     return "amour-core";
@@ -132,7 +136,7 @@ export class AmourCoreProvider extends AIProvider {
       return {
         text: answer(question),
         provider: this.name,
-        model: "amour-core-v3"
+        model: "amour-core-v4"
       };
     }
 
@@ -141,16 +145,18 @@ export class AmourCoreProvider extends AIProvider {
       return {
         text: knowledgeAnswer,
         provider: this.name,
-        model: "amour-core-rag-v3"
+        model: "amour-core-rag-v4"
       };
     }
 
-    const error = new Error("LOCAL_NO_MATCH");
-    error.recoverable = true;
-    throw error;
+    return {
+      text: buildReflectiveFallback(question),
+      provider: this.name,
+      model: "amour-core-reflective-v4"
+    };
   }
 
   fallbackText() {
-    return `Je n’ai pas encore assez de connaissances locales pour répondre correctement à cette question. Un modèle génératif open source peut prendre le relais lorsqu’il est configuré.`;
+    return `Réponse directe : je peux analyser une question à partir des informations disponibles, sans inventer ce que je ne sais pas.\n\nNiveau de certitude : faible sans contexte suffisant.\n\nHypothèses ou limites : les éléments nécessaires pour conclure ne sont pas disponibles.\n\nÉtape suivante : donne-moi le contexte ou les faits précis et je poursuivrai l’analyse.`;
   }
 }
