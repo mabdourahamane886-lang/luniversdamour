@@ -33,13 +33,15 @@ export function createProviders() {
       })
     : null;
 
+  // Hugging Face / OpenAI-compatible routing is deliberately opt-in.
+  // The default engine is Gemini (when configured) with Amour Core as the
+  // deterministic local fallback, so the application does not depend on HF.
   if (mode === "local") return { providers: [local], local };
-  if (mode === "compat") return { providers: [compatible, local].filter(Boolean), local };
+  if (mode === "compat") return { providers: [compatible, primary, local].filter(Boolean), local };
   if (mode === "gemini") return { providers: [primary, local].filter(Boolean), local };
 
-  // Hybrid prioritizes a real generative model whenever one is configured.
-  // The local Amour Core remains the deterministic, privacy-friendly fallback.
-  return { providers: [compatible, primary, local].filter(Boolean), local };
+  // Default hybrid: Bickri/Amour engine -> Gemini -> local fallback.
+  return { providers: [primary, local].filter(Boolean), local };
 }
 
 export async function generateWithFallback({ systemPrompt, messages, knowledge }) {
