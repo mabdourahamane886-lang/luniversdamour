@@ -3,8 +3,14 @@
   "buildCommand": "echo static-site-no-build",
   "outputDirectory": ".",
   "rewrites": [
-    { "source": "/app", "destination": "/app/index.html" },
-    { "source": "/app/", "destination": "/app/index.html" }
+    {
+      "source": "/app",
+      "destination": "/app/index.html"
+    },
+    {
+      "source": "/app/",
+      "destination": "/app/index.html"
+    }
   ],
   "functions": {
     "api/chat.js": {
