@@ -93,8 +93,9 @@ export async function runAgent({ payload, tool }) {
 
   const verified = repairResponse(result?.text, "Je n'ai pas pu produire une réponse fiable pour le moment.");
   const explicitMemories = memoryEnabled ? extractExplicitMemories(userText, true) : [];
-  if (explicitMemories.length && !toolResult.memorySaved) {
-    await saveMemories(sessionId, explicitMemories);
+  let memorySaved = Boolean(toolResult.memorySaved);
+  if (explicitMemories.length && !memorySaved) {
+    memorySaved = await saveMemories(sessionId, explicitMemories);
   }
 
   await writeRunTrace({
@@ -115,7 +116,7 @@ export async function runAgent({ payload, tool }) {
     model: result?.model || "unknown",
     knowledgeUsed: toolResult.knowledge.length,
     memoryUsed: memories.length > 0,
-    memorySaved: toolResult.memorySaved || explicitMemories.length > 0,
+    memorySaved,
     intent: plan.intent,
     tools: toolResult.toolRuns.map((item) => item.name),
     verified: verified.ok,
