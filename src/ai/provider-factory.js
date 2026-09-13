@@ -18,7 +18,6 @@ export function createProviders() {
   const compatBaseUrl = process.env.AI_COMPAT_BASE_URL || "https://router.huggingface.co/v1";
   const compatKey = process.env.AI_COMPAT_API_KEY || process.env.HF_TOKEN || secondaryKey;
   const compatModel = process.env.AI_COMPAT_MODEL || "openai/gpt-oss-120b:fastest";
-  const secondaryModel = process.env.AI_SECONDARY_MODEL || compatModel;
 
   const local = new AmourCoreProvider();
   const primary = primaryKey
@@ -37,7 +36,10 @@ export function createProviders() {
   if (mode === "local") return { providers: [local], local };
   if (mode === "compat") return { providers: [compatible, local].filter(Boolean), local };
   if (mode === "gemini") return { providers: [primary, local].filter(Boolean), local };
-  return { providers: [local, compatible, primary].filter(Boolean), local };
+
+  // Hybrid prioritizes a real generative model whenever one is configured.
+  // The local Amour Core remains the deterministic, privacy-friendly fallback.
+  return { providers: [compatible, primary, local].filter(Boolean), local };
 }
 
 export async function generateWithFallback({ systemPrompt, messages, knowledge }) {
@@ -61,7 +63,7 @@ export async function generateWithFallback({ systemPrompt, messages, knowledge }
   return {
     text: local.fallbackText(),
     provider: local.name,
-    model: "amour-core-v1",
+    model: "amour-core-v4-fallback",
     fallback: true,
     tried: errors
   };
