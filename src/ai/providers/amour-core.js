@@ -43,11 +43,9 @@ export class AmourCoreProvider extends AIProvider {
 
     const match = TOPICS.find((topic) => topic.test.test(question));
     if (!match) {
-      return {
-        text: `Je suis Amour AI Core. Je peux répondre directement aux questions courantes sur les relations, les émotions et la communication, sans dépendre de Gemini. Pour une question très spécialisée, donne-moi le maximum de contexte possible et je te proposerai la réponse que notre moteur local peut fournir.`,
-        provider: this.name,
-        model: "amour-core-v1"
-      };
+      const error = new Error("LOCAL_NO_MATCH");
+      error.recoverable = true;
+      throw error;
     }
 
     return {
@@ -55,5 +53,9 @@ export class AmourCoreProvider extends AIProvider {
       provider: this.name,
       model: "amour-core-v1"
     };
+  }
+
+  fallbackText() {
+    return `Je suis Amour AI Core, le moteur local de L'univers d'amour. Je fonctionne sans Gemini pour les réponses intégrées à mon cœur de connaissances. Pour une question qui dépasse encore ce cœur local, le système peut utiliser un fournisseur compatible optionnel sans rendre Gemini obligatoire.`;
   }
 }
