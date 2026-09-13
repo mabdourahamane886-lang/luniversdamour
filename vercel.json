@@ -4,11 +4,9 @@
   "outputDirectory": ".",
   "functions": {
     "api/chat.js": {
-      "memory": 128,
       "maxDuration": 30
     },
     "api/health.js": {
-      "memory": 128,
       "maxDuration": 10
     }
   }
