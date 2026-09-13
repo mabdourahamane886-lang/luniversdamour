@@ -23,7 +23,6 @@ window.LUNIVERS_SUPABASE = {
 
     const style = document.createElement("style");
     style.textContent = `
-      /* Amour AI = catégorie indépendante, pas une section à faire défiler */
       #amour-ai.amour-ai-category {
         display: none !important;
       }
@@ -38,7 +37,6 @@ window.LUNIVERS_SUPABASE = {
         z-index: 5000;
         display: grid;
         place-items: stretch;
-        padding: 0;
         background: rgba(38, 12, 27, .68);
         opacity: 0;
         pointer-events: none;
@@ -120,10 +118,6 @@ window.LUNIVERS_SUPABASE = {
       }
 
       @media (max-width: 600px) {
-        #amourAiPageLayer {
-          padding: 0;
-        }
-
         #amourAiPageSheet {
           width: 100vw;
           height: 100vh;
@@ -163,10 +157,8 @@ window.LUNIVERS_SUPABASE = {
     close.setAttribute("aria-label", "Fermer Amour AI");
     close.innerHTML = '<i class="fa-solid fa-xmark"></i>';
 
-    const inner = document.createElement("div");
-    inner.appendChild(close);
-    inner.appendChild(aiSection);
-    sheet.appendChild(inner);
+    sheet.appendChild(close);
+    sheet.appendChild(aiSection);
     layer.appendChild(sheet);
     document.body.appendChild(layer);
 
@@ -183,8 +175,7 @@ window.LUNIVERS_SUPABASE = {
       document.body.classList.remove("amour-ai-open");
     }
 
-    const existingAiLinks = navMenu.querySelectorAll('a[href="#amour-ai"]');
-    existingAiLinks.forEach((link) => {
+    navMenu.querySelectorAll('a[href="#amour-ai"]').forEach((link) => {
       link.classList.add("amour-ai-category-link");
       link.innerHTML = '<i class="fa-solid fa-sparkles"></i><span>Amour AI</span>';
       link.addEventListener("click", (event) => {
