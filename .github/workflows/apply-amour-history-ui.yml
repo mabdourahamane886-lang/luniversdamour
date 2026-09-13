@@ -1,6 +1,5 @@
 name: Apply Amour AI history UI
 
-# One-shot UI patch; runs on the next push to main.
 on:
   push:
     branches: [main]
@@ -10,21 +9,21 @@ permissions:
 
 jobs:
   patch:
-    if: ${{ !contains(github.event.head_commit.message, 'feat(ai): organize conversation history like ChatGPT') }}
+    if: ${{ !contains(github.event.head_commit.message, 'feat(ai): organize conversation history like ChatGPT') && !contains(github.event.head_commit.message, 'fix(ai): clear active conversation after leaving') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Patch only conversation history UI
+      - name: Patch only conversation history behavior
         shell: python
         run: |
           from pathlib import Path
           p = Path('js/frontend/amour-ai.js')
           s = p.read_text(encoding='utf-8')
 
-          old = '''  function renderHistory() {
+          old_history = '''  function renderHistory() {
     if (!els.convList) return;
     const q = String(els.search?.value || "").trim().toLowerCase();
     const rows = state.conversations
@@ -37,7 +36,7 @@ jobs:
     els.convList.innerHTML = rows.join("") || "<p class=\\"ai-muted\\">Aucune conversation</p>";
   }'''
 
-          new = '''  function historyGroupLabel(timestamp) {
+          new_history = '''  function historyGroupLabel(timestamp) {
     const date = new Date(timestamp || Date.now());
     const now = new Date();
     const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -66,22 +65,19 @@ jobs:
     const html = order.map((group) => {
       const items = groups.get(group);
       if (!items?.length) return "";
-      const rows = items.map((item) => `
+      return `<section class="ai-history-group"><div class="ai-history-group-title">${group}</div>${items.map((item) => `
         <div class="ai-conv-row">
-          <button type="button" class="ai-conv-item ${item.id === state.activeId ? "active" : ""}" data-conv-id="${item.id}" title="${escapeHtml(item.title || "Conversation")}">
-            ${escapeHtml(item.title || "Conversation")}
-          </button>
+          <button type="button" class="ai-conv-item ${item.id === state.activeId ? "active" : ""}" data-conv-id="${item.id}" title="${escapeHtml(item.title || "Conversation")}">${escapeHtml(item.title || "Conversation")}</button>
           <button type="button" class="ai-conv-delete" data-delete-conv="${item.id}" aria-label="Supprimer la conversation" title="Supprimer">🗑️</button>
-        </div>`).join("");
-      return `<section class="ai-history-group"><div class="ai-history-group-title">${group}</div>${rows}</section>`;
+        </div>`).join("")}</section>`;
     }).join("");
 
     els.convList.innerHTML = html || "<p class=\\"ai-muted\\">Aucune conversation</p>";
   }'''
 
-          if old not in s:
-              raise SystemExit('renderHistory target not found; refusing to modify AI file')
-          s = s.replace(old, new, 1)
+          if old_history not in s:
+              raise SystemExit('history target not found; refusing to modify')
+          s = s.replace(old_history, new_history, 1)
 
           old_listener = '''  els.convList?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-conv-id]");
@@ -107,7 +103,7 @@ jobs:
         state.conversations.push(first);
         state.activeId = first.id;
       } else if (state.activeId === id) {
-        state.activeId = state.conversations[0].id;
+        state.activeId = state.conversations.find((item) => !(item.messages || []).length)?.id || state.conversations[0].id;
       }
       persist();
       renderMessages();
@@ -118,18 +114,69 @@ jobs:
     const button = event.target.closest("[data-conv-id]");
     if (!button) return;
     state.activeId = button.dataset.convId;
+    sessionStorage.setItem("luniversdamour.ai.activeConversation", state.activeId);
     persist();
     renderMessages();
     renderHistory();
   });'''
 
           if old_listener not in s:
-              raise SystemExit('history listener target not found; refusing to modify AI file')
+              raise SystemExit('history listener target not found; refusing to modify')
           s = s.replace(old_listener, new_listener, 1)
+
+          old_new = '''  function newConversation() {
+    const conversation = { id: uid(), title: "Nouvelle conversation", updatedAt: Date.now(), messages: [] };
+    state.conversations.push(conversation);
+    state.activeId = conversation.id;
+    persist();
+    renderMessages();
+    renderHistory();
+  }'''
+
+          new_new = '''  function newConversation() {
+    const current = activeConversation();
+    const conversation = { id: uid(), title: "Nouvelle conversation", updatedAt: Date.now(), messages: [] };
+    if (current && !(current.messages || []).length && current.title === "Nouvelle conversation") {
+      state.activeId = current.id;
+      renderMessages();
+      renderHistory();
+      return;
+    }
+    state.conversations.push(conversation);
+    state.activeId = conversation.id;
+    sessionStorage.setItem("luniversdamour.ai.activeConversation", conversation.id);
+    persist();
+    renderMessages();
+    renderHistory();
+    els.input?.focus();
+  }'''
+
+          if old_new not in s:
+              raise SystemExit('newConversation target not found; refusing to modify')
+          s = s.replace(old_new, new_new, 1)
 
           marker = '''  renderMessages();
   renderHistory();
   updateCharCount();'''
+          init = '''  // A page reload/leave starts on a clean conversation view; saved conversations stay in history.
+  try {
+    const sessionActive = sessionStorage.getItem("luniversdamour.ai.activeConversation");
+    if (!sessionActive || !state.conversations.some((item) => item.id === sessionActive)) {
+      const clean = { id: uid(), title: "Nouvelle conversation", updatedAt: Date.now(), messages: [] };
+      state.conversations.push(clean);
+      state.activeId = clean.id;
+      sessionStorage.setItem("luniversdamour.ai.activeConversation", clean.id);
+      persist();
+    } else {
+      state.activeId = sessionActive;
+    }
+  } catch (_) {}
+
+'''
+          if marker not in s:
+              raise SystemExit('initialization marker not found; refusing to modify')
+          s = s.replace(marker, init + marker, 1)
+
           css = '''  const historyStyle = document.createElement("style");
   historyStyle.textContent = `
     .ai-history-group { margin: 14px 0 4px; }
@@ -142,15 +189,13 @@ jobs:
   document.head.appendChild(historyStyle);
 
 '''
-          if marker not in s:
-              raise SystemExit('render initialization marker not found; refusing to modify AI file')
           s = s.replace(marker, css + marker, 1)
           p.write_text(s, encoding='utf-8')
-      - name: Commit patched file and remove one-shot workflow
+      - name: Commit final patch and remove workflow
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/frontend/amour-ai.js .github/workflows/apply-amour-history-ui.yml
+          git add js/frontend/amour-ai.js
           git rm .github/workflows/apply-amour-history-ui.yml
-          git commit -m "feat(ai): organize conversation history like ChatGPT"
+          git commit -m "fix(ai): clear active conversation after leaving"
           git push
