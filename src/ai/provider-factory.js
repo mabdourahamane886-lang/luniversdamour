@@ -8,16 +8,30 @@ function envInt(name, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function firstEnv(...names) {
+  for (const name of names) {
+    const value = String(process.env[name] || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
 export function createProviders() {
   const timeoutMs = envInt("AI_TIMEOUT_MS", AI_TIMEOUT_DEFAULT);
   const maxOutputTokens = envInt("AI_MAX_OUTPUT_TOKENS", MAX_OUTPUT_TOKENS_DEFAULT);
-  const mode = String(process.env.AMOUR_AI_MODE || "hybrid").toLowerCase();
-  const primaryKey = process.env.AI_PRIMARY_API_KEY || process.env.GEMINI_API_KEY;
-  const secondaryKey = process.env.AI_SECONDARY_API_KEY || process.env.OPENAI_API_KEY;
-  const primaryModel = process.env.AI_PRIMARY_MODEL || process.env.GEMINI_MODEL || "gemini-3.8-flash";
-  const compatBaseUrl = process.env.AI_COMPAT_BASE_URL || "https://router.huggingface.co/v1";
-  const compatKey = process.env.AI_COMPAT_API_KEY || process.env.HF_TOKEN || secondaryKey;
-  const compatModel = process.env.AI_COMPAT_MODEL || "openai/gpt-oss-120b:fastest";
+  const mode = String(process.env.AMOUR_AI_MODE || "gemini").toLowerCase();
+
+  const primaryKey = firstEnv(
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "GOOGLE_GENERATIVE_AI_API_KEY",
+    "AI_PRIMARY_API_KEY"
+  );
+  const secondaryKey = firstEnv("AI_SECONDARY_API_KEY", "OPENAI_API_KEY");
+  const primaryModel = firstEnv("GEMINI_MODEL", "AI_PRIMARY_MODEL") || "gemini-3.8-flash";
+  const compatBaseUrl = firstEnv("AI_COMPAT_BASE_URL") || "https://router.huggingface.co/v1";
+  const compatKey = firstEnv("AI_COMPAT_API_KEY", "HF_TOKEN") || secondaryKey;
+  const compatModel = firstEnv("AI_COMPAT_MODEL") || "openai/gpt-oss-120b:fastest";
 
   const local = new AmourCoreProvider();
   const primary = primaryKey
@@ -33,14 +47,8 @@ export function createProviders() {
       })
     : null;
 
-  // Hugging Face / OpenAI-compatible routing is deliberately opt-in.
-  // The default engine is Gemini (when configured) with Amour Core as the
-  // deterministic local fallback, so the application does not depend on HF.
   if (mode === "local") return { providers: [local], local };
   if (mode === "compat") return { providers: [compatible, primary, local].filter(Boolean), local };
-  if (mode === "gemini") return { providers: [primary, local].filter(Boolean), local };
-
-  // Default hybrid: Bickri/Amour engine -> Gemini -> local fallback.
   return { providers: [primary, local].filter(Boolean), local };
 }
 
