@@ -42,19 +42,38 @@
     window.setTimeout(() => node.classList.remove("show"), 2600);
   };
 
-  function normalizeAiText(value) {
+  function normalizeAiText(value, seen = new WeakSet()) {
     if (typeof value === "string") return value.trim();
     if (value == null) return "";
-    if (Array.isArray(value)) return value.map(normalizeAiText).filter(Boolean).join("\n").trim();
+    if (Array.isArray(value)) {
+      return value.map((item) => normalizeAiText(item, seen)).filter(Boolean).join("\n").trim();
+    }
     if (typeof value === "object") {
-      const direct = ["text", "content", "reply", "message", "output_text"].find((key) => typeof value[key] === "string");
-      if (direct) return value[direct].trim();
-      for (const key of ["output", "response", "result", "data"]) {
+      if (seen.has(value)) return "";
+      seen.add(value);
+
+      const directKeys = ["text", "content", "reply", "message", "output_text"];
+      for (const key of directKeys) {
+        if (typeof value[key] === "string" && value[key].trim()) return value[key].trim();
+      }
+
+      for (const key of ["output", "response", "result", "data", "candidates", "parts"]) {
         if (value[key] != null) {
-          const nested = normalizeAiText(value[key]);
+          const nested = normalizeAiText(value[key], seen);
           if (nested) return nested;
         }
       }
+
+      if (value.error) {
+        const errorText = normalizeAiText(value.error, seen);
+        if (errorText) return `Erreur IA : ${errorText}`;
+      }
+
+      try {
+        const json = JSON.stringify(value);
+        if (json && json !== "{}") return json;
+      } catch (_) {}
+      return "Réponse IA reçue mais impossible à afficher.";
     }
     return String(value).trim();
   }
@@ -161,7 +180,7 @@
   function addMessage(role, text) {
     const conversation = activeConversation();
     conversation.messages = Array.isArray(conversation.messages) ? conversation.messages : [];
-    const normalized = normalizeAiText(text);
+    const normalized = normalizeAiText(text) || "Réponse IA vide.";
     conversation.messages.push({ role, text: normalized, createdAt: Date.now() });
     conversation.messages = conversation.messages.slice(-MAX_HISTORY);
     conversation.updatedAt = Date.now();
@@ -179,44 +198,19 @@
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const error = new Error(data?.error?.message || data?.error || "L'assistant est indisponible.");
+      const message = normalizeAiText(data?.error?.message ?? data?.error ?? data?.message) || `Erreur HTTP ${response.status}`;
+      const error = new Error(message);
       error.retryable = response.status >= 500 || response.status === 429;
       throw error;
     }
     return data?.data || data;
   }
 
-  async function askSupabase(messages, tool) {
-    const config = window.LUNIVERS_SUPABASE || {};
-    const url = String(config.url || DEFAULT_SUPABASE_URL).replace(/\/$/, "");
-    const key = String(config.anonKey || DEFAULT_SUPABASE_KEY).trim();
-    const response = await fetch(`${url}/functions/v1/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: key,
-        Authorization: `Bearer ${key}`
-      },
-      body: JSON.stringify({ messages, tool })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data?.error || "Supabase indisponible.");
-    return normalizeAiText(data.reply ?? data.text);
-  }
-
   async function generate(messages, tool) {
-    try {
-      const data = await postJson("/api/chat", { messages, tool });
-      const text = normalizeAiText(data.reply ?? data.text);
-      if (text) return { text, provider: data.provider || "vercel" };
-      throw new Error("Réponse IA vide.");
-    } catch (primaryError) {
-      try {
-        const text = await askSupabase(messages, tool);
-        if (text) return { text, provider: "supabase" };
-      } catch (_) {}
-      throw primaryError;
-    }
+    const data = await postJson("/api/chat", { messages, tool });
+    const text = normalizeAiText(data?.reply ?? data?.text ?? data?.message ?? data);
+    if (text) return { text, provider: data?.provider || "vercel" };
+    throw new Error("Réponse IA vide.");
   }
 
   async function send(text) {
@@ -382,10 +376,12 @@
         els.input.value = `${els.input.value} ${event.results[0][0].transcript}`.trim();
         updateCharCount();
       };
+      recognition.onerror = () => toast("Impossible d'utiliser le microphone.");
       recognition.start();
     });
-    els.micStop?.addEventListener("click", () => {});
   }
+
+  if (els.micStop) els.micStop.addEventListener("click", stopSpeak);
 
   renderMessages();
   renderHistory();
