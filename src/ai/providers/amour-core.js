@@ -36,26 +36,35 @@ export class AmourCoreProvider extends AIProvider {
     return "amour-core";
   }
 
-  async generateText({ messages }) {
+  async generateText({ messages, knowledge = [] }) {
     const last = [...messages].reverse().find((item) => item.role === "user");
     const question = String(last?.content || last?.text || "").trim();
     if (!question) throw new Error("EMPTY_USER_MESSAGE");
 
     const match = TOPICS.find((topic) => topic.test.test(question));
-    if (!match) {
-      const error = new Error("LOCAL_NO_MATCH");
-      error.recoverable = true;
-      throw error;
+    if (match) {
+      return {
+        text: match.answer(question),
+        provider: this.name,
+        model: "amour-core-v1"
+      };
     }
 
-    return {
-      text: match.answer(question),
-      provider: this.name,
-      model: "amour-core-v1"
-    };
+    const first = knowledge.find((item) => item?.title && item?.content);
+    if (first) {
+      return {
+        text: `Selon la base de connaissances de L'univers d'amour :\n\n${first.content}\n\nJe peux aussi approfondir ce sujet si tu me donnes davantage de contexte.`,
+        provider: this.name,
+        model: "amour-core-rag-v1"
+      };
+    }
+
+    const error = new Error("LOCAL_NO_MATCH");
+    error.recoverable = true;
+    throw error;
   }
 
   fallbackText() {
-    return `Je suis Amour AI Core, le moteur local de L'univers d'amour. Je fonctionne sans Gemini pour les réponses intégrées à mon cœur de connaissances. Pour une question qui dépasse encore ce cœur local, le système peut utiliser un fournisseur compatible optionnel sans rendre Gemini obligatoire.`;
+    return `Je suis Amour AI Core, le moteur local de L'univers d'amour. Je fonctionne sans Gemini pour les réponses intégrées à notre cœur de connaissances. Pour une question qui dépasse encore ce cœur local, le système peut utiliser un modèle open source compatible optionnel.`;
   }
 }
