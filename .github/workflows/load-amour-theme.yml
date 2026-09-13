@@ -1,0 +1,42 @@
+name: Load Amour Theme
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  load-theme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject theme loader
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          loader = '<script src="/js/frontend/theme.js"></script>'
+          if loader not in text:
+              marker = '</body>'
+              if marker not in text:
+                  raise SystemExit('index.html: </body> not found')
+              text = text.replace(marker, loader + '\n' + marker, 1)
+              path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit homepage wiring
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "Theme loader already present."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix(theme): load theme.js on homepage"
+          git push
