@@ -50,6 +50,13 @@ export default async function handler(request, response) {
       blocked: result.blocked,
       promptVersion: result.promptVersion,
       memoryEnabled: payload.memoryEnabled,
+      memoryUsed: result.memoryUsed,
+      memorySaved: result.memorySaved,
+      intent: result.intent,
+      tools: result.tools,
+      knowledgeUsed: result.knowledgeUsed,
+      verified: result.verified,
+      verificationIssues: result.verificationIssues,
       usage: quota
     };
 
@@ -60,7 +67,11 @@ export default async function handler(request, response) {
       text: result.text,
       provider: result.provider,
       model: result.model,
-      memoryEnabled: payload.memoryEnabled
+      memoryEnabled: payload.memoryEnabled,
+      intent: result.intent,
+      tools: result.tools,
+      knowledgeUsed: result.knowledgeUsed,
+      verified: result.verified
     });
   } catch (error) {
     if (error instanceof AppError) {
