@@ -1,0 +1,120 @@
+name: Fix L'univers search and photos
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, 'fix(ui): repair site search and photos') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Patch theme.js
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('js/frontend/theme.js')
+          s = p.read_text(encoding='utf-8')
+
+          old_photos = '''<figure><img src="https://images.unsplash.com/photo-1784460469850-80838868f4d2?auto=format&fit=crop&fm=jpg&q=82&w=1400" alt="Femme noire souriante" loading="eager"><figcaption>Un sourire, une émotion ❤️</figcaption></figure>
+        <figure><img src="https://images.unsplash.com/photo-1644042191329-759b854f880a?auto=format&fit=crop&fm=jpg&q=82&w=1400" alt="Couple africain souriant et complice" loading="lazy"><figcaption>Complicité & amour 💕</figcaption></figure>'''
+
+          new_photos = '''<figure><img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&fm=jpg&q=86&w=1400" alt="Professionnels africains travaillant ensemble" loading="eager"><figcaption>Échanger, comprendre, avancer ❤️</figcaption></figure>
+        <figure><img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&fm=jpg&q=86&w=1400" alt="Couple partageant un moment de complicité" loading="lazy"><figcaption>Complicité & amour 💕</figcaption></figure>'''
+
+          if old_photos not in s:
+              raise SystemExit('photo block not found; refusing to modify')
+          s = s.replace(old_photos, new_photos, 1)
+
+          old_search = '''    search.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const query = document.getElementById("luniversSiteSearch").value.trim().toLowerCase();
+      if (!query) return;
+      const candidates = Array.from(document.querySelectorAll("main section, main article"));
+      const target = candidates.find((el) => (el.innerText || "").toLowerCase().includes(query));
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });'''
+
+          new_search = '''    search.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = document.getElementById("luniversSiteSearch");
+      const query = String(input?.value || "").trim().toLowerCase();
+      if (!query) {
+        input?.focus();
+        return;
+      }
+
+      const candidates = Array.from(document.querySelectorAll("main section, main article, main h1, main h2, main h3, main p, main a, main button"));
+      const target = candidates.find((el) => {
+        const text = String(el.innerText || el.textContent || "").toLowerCase();
+        return text.includes(query);
+      });
+
+      if (target) {
+        const section = target.closest("section, article") || target;
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+        section.classList.add("lunivers-search-hit");
+        window.setTimeout(() => section.classList.remove("lunivers-search-hit"), 1800);
+        return;
+      }
+
+      const message = document.createElement("div");
+      message.className = "lunivers-search-no-result";
+      message.textContent = `Aucun résultat pour « ${input?.value || query} »`;
+      document.body.appendChild(message);
+      window.setTimeout(() => message.remove(), 2400);
+    });'''
+
+          if old_search not in s:
+              raise SystemExit('search block not found; refusing to modify')
+          s = s.replace(old_search, new_search, 1)
+
+          marker = '''    document.head.appendChild(style);
+  }
+
+  function buildStylePanel() {'''
+          extra = '''    document.head.appendChild(style);
+
+    const searchFixStyle = document.createElement("style");
+    searchFixStyle.textContent = `
+      .lunivers-search-hit{outline:3px solid var(--coral2);outline-offset:6px;border-radius:18px;animation:luniversSearchPulse .6s ease 2}
+      .lunivers-search-no-result{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;padding:12px 18px;border-radius:999px;background:var(--petrol);color:#fff;font-size:12px;font-weight:800;box-shadow:0 12px 35px rgba(0,0,0,.22)}
+      @keyframes luniversSearchPulse{50%{transform:scale(1.01)}}
+    `;
+    document.head.appendChild(searchFixStyle);
+  }
+
+  function buildStylePanel() {'''
+          if marker not in s:
+              raise SystemExit('style marker not found; refusing to modify')
+          s = s.replace(marker, extra, 1)
+
+          # If a remote image ever fails, hide the broken image instead of showing a broken icon.
+          fallback_marker = '''    main.insertBefore(section, main.firstElementChild);'''
+          fallback_code = '''    section.querySelectorAll("img").forEach((img) => {
+      img.addEventListener("error", () => {
+        img.style.display = "none";
+        img.closest("figure")?.classList.add("image-unavailable");
+      }, { once: true });
+    });
+    main.insertBefore(section, main.firstElementChild);'''
+          if fallback_marker not in s:
+              raise SystemExit('image marker not found; refusing to modify')
+          s = s.replace(fallback_marker, fallback_code, 1)
+
+          p.write_text(s, encoding='utf-8')
+      - name: Commit and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/frontend/theme.js
+          git rm .github/workflows/fix-search-photos.yml
+          git commit -m "fix(ui): repair site search and photos"
+          git push
