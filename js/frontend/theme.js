@@ -66,6 +66,54 @@
     document.head.appendChild(style);
   }
 
+  function buildGoogleHeader() {
+    const nav = document.querySelector(".top .nav");
+    if (!nav || document.getElementById("luniversGoogleSearch")) return;
+
+    const search = document.createElement("form");
+    search.id = "luniversGoogleSearch";
+    search.className = "lunivers-google-search";
+    search.setAttribute("role", "search");
+    search.innerHTML = `
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input id="luniversSiteSearch" type="search" autocomplete="off" placeholder="Rechercher dans L’univers d’amour" aria-label="Rechercher dans L’univers d’amour">
+      <button type="submit" aria-label="Rechercher"><i class="fa-solid fa-arrow-right"></i></button>`;
+
+    const profile = document.createElement("a");
+    profile.className = "lunivers-profile-button";
+    profile.href = "#univers";
+    profile.setAttribute("aria-label", "Profil L’univers d’amour");
+    profile.innerHTML = `<i class="fa-solid fa-user"></i>`;
+
+    nav.insertBefore(search, nav.querySelector(".menu"));
+    nav.appendChild(profile);
+
+    const style = document.createElement("style");
+    style.textContent = `
+      .top .nav{gap:14px}
+      .lunivers-google-search{height:44px;flex:1;max-width:430px;min-width:190px;display:flex;align-items:center;gap:10px;padding:0 8px 0 16px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:999px;box-shadow:0 2px 12px rgba(0,0,0,.12);color:#7a7a7a}
+      .lunivers-google-search>i{font-size:14px;flex:none}
+      .lunivers-google-search input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:#222;font-size:12px}
+      .lunivers-google-search input::placeholder{color:#8b8b8b}
+      .lunivers-google-search button{width:32px;height:32px;border-radius:50%;background:#f5f5f5;color:var(--petrol);display:grid;place-items:center;flex:none}
+      .lunivers-google-search button:hover{background:#ececec}
+      .lunivers-profile-button{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--coral2),var(--coral));color:#fff;border:2px solid rgba(255,255,255,.75);box-shadow:0 4px 15px rgba(0,0,0,.18);flex:none}
+      .lunivers-profile-button i{font-size:17px}
+      @media(max-width:980px){.lunivers-google-search{order:3;max-width:none;width:100%;flex-basis:100%}.top .nav{flex-wrap:wrap;padding:12px 0}.top .nav .menu{display:none}.lunivers-profile-button{margin-left:auto}.brand{margin-right:auto}}
+      @media(max-width:600px){.lunivers-google-search{height:42px}.lunivers-google-search input{font-size:11px}.lunivers-profile-button{width:40px;height:40px}.brand-mark{width:40px;height:40px}}
+    `;
+    document.head.appendChild(style);
+
+    search.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const query = document.getElementById("luniversSiteSearch").value.trim().toLowerCase();
+      if (!query) return;
+      const candidates = Array.from(document.querySelectorAll("main section, main article"));
+      const target = candidates.find((el) => (el.innerText || "").toLowerCase().includes(query));
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   function buildStylePanel() {
     if (document.getElementById("luniversStylePanel")) return;
     const panel = document.createElement("div");
@@ -104,9 +152,10 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => { addLovePhotos(); buildStylePanel(); }, { once: true });
+    document.addEventListener("DOMContentLoaded", () => { addLovePhotos(); buildGoogleHeader(); buildStylePanel(); }, { once: true });
   } else {
     addLovePhotos();
+    buildGoogleHeader();
     buildStylePanel();
   }
 })();
