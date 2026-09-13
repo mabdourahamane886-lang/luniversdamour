@@ -1,0 +1,155 @@
+name: Apply Amour AI history UI
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, 'feat(ai): organize conversation history like ChatGPT') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Patch only conversation history UI
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('js/frontend/amour-ai.js')
+          s = p.read_text(encoding='utf-8')
+
+          old = '''  function renderHistory() {
+    if (!els.convList) return;
+    const q = String(els.search?.value || "").trim().toLowerCase();
+    const rows = state.conversations
+      .filter((item) => !q || String(item.title).toLowerCase().includes(q) || (item.messages || []).some((m) => normalizeAiText(m.text || m.content).toLowerCase().includes(q)))
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .map((item) => `
+        <button type="button" class="ai-conv-item ${item.id === state.activeId ? "active" : ""}" data-conv-id="${item.id}">
+          ${escapeHtml(item.title || "Conversation")}
+        </button>`);
+    els.convList.innerHTML = rows.join("") || "<p class=\\"ai-muted\\">Aucune conversation</p>";
+  }'''
+
+          new = '''  function historyGroupLabel(timestamp) {
+    const date = new Date(timestamp || Date.now());
+    const now = new Date();
+    const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const diff = Math.floor((day(now) - day(date)) / 86400000);
+    if (diff === 0) return "Aujourd’hui";
+    if (diff === 1) return "Hier";
+    if (diff <= 7) return "7 derniers jours";
+    return "Plus ancien";
+  }
+
+  function renderHistory() {
+    if (!els.convList) return;
+    const q = String(els.search?.value || "").trim().toLowerCase();
+    const groups = new Map();
+    const order = ["Aujourd’hui", "Hier", "7 derniers jours", "Plus ancien"];
+
+    state.conversations
+      .filter((item) => !q || String(item.title).toLowerCase().includes(q) || (item.messages || []).some((m) => normalizeAiText(m.text || m.content).toLowerCase().includes(q)))
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .forEach((item) => {
+        const group = historyGroupLabel(item.updatedAt);
+        if (!groups.has(group)) groups.set(group, []);
+        groups.get(group).push(item);
+      });
+
+    const html = order.map((group) => {
+      const items = groups.get(group);
+      if (!items?.length) return "";
+      const rows = items.map((item) => `
+        <div class="ai-conv-row">
+          <button type="button" class="ai-conv-item ${item.id === state.activeId ? "active" : ""}" data-conv-id="${item.id}" title="${escapeHtml(item.title || "Conversation")}">
+            ${escapeHtml(item.title || "Conversation")}
+          </button>
+          <button type="button" class="ai-conv-delete" data-delete-conv="${item.id}" aria-label="Supprimer la conversation" title="Supprimer">🗑️</button>
+        </div>`).join("");
+      return `<section class="ai-history-group"><div class="ai-history-group-title">${group}</div>${rows}</section>`;
+    }).join("");
+
+    els.convList.innerHTML = html || "<p class=\\"ai-muted\\">Aucune conversation</p>";
+  }'''
+
+          if old not in s:
+              raise SystemExit('renderHistory target not found; refusing to modify AI file')
+          s = s.replace(old, new, 1)
+
+          old_listener = '''  els.convList?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-conv-id]");
+    if (!button) return;
+    state.activeId = button.dataset.convId;
+    persist();
+    renderMessages();
+    renderHistory();
+  });'''
+
+          new_listener = '''  els.convList?.addEventListener("click", (event) => {
+    const deleteButton = event.target.closest("[data-delete-conv]");
+    if (deleteButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const id = deleteButton.dataset.deleteConv;
+      const conversation = state.conversations.find((item) => item.id === id);
+      if (!conversation) return;
+      if (!window.confirm(`Supprimer « ${conversation.title || "Conversation"} » ?`)) return;
+      state.conversations = state.conversations.filter((item) => item.id !== id);
+      if (!state.conversations.length) {
+        const first = { id: uid(), title: "Nouvelle conversation", updatedAt: Date.now(), messages: [] };
+        state.conversations.push(first);
+        state.activeId = first.id;
+      } else if (state.activeId === id) {
+        state.activeId = state.conversations[0].id;
+      }
+      persist();
+      renderMessages();
+      renderHistory();
+      return;
+    }
+
+    const button = event.target.closest("[data-conv-id]");
+    if (!button) return;
+    state.activeId = button.dataset.convId;
+    persist();
+    renderMessages();
+    renderHistory();
+  });'''
+
+          if old_listener not in s:
+              raise SystemExit('history listener target not found; refusing to modify AI file')
+          s = s.replace(old_listener, new_listener, 1)
+
+          marker = '''  renderMessages();
+  renderHistory();
+  updateCharCount();'''
+          css = '''  const historyStyle = document.createElement("style");
+  historyStyle.textContent = `
+    .ai-history-group { margin: 14px 0 4px; }
+    .ai-history-group-title { padding: 6px 12px 5px; font-size: .72rem; font-weight: 700; opacity: .6; text-transform: uppercase; letter-spacing: .04em; }
+    .ai-conv-row { display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .ai-conv-row .ai-conv-item { flex: 1; min-width: 0; }
+    .ai-conv-delete { border: 0; background: transparent; cursor: pointer; opacity: .45; border-radius: 8px; padding: 7px; line-height: 1; }
+    .ai-conv-delete:hover { opacity: 1; background: rgba(127,127,127,.12); }
+  `;
+  document.head.appendChild(historyStyle);
+
+'''
+          if marker not in s:
+              raise SystemExit('render initialization marker not found; refusing to modify AI file')
+          s = s.replace(marker, css + marker, 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit patched file and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/frontend/amour-ai.js .github/workflows/apply-amour-history-ui.yml
+          git rm .github/workflows/apply-amour-history-ui.yml
+          git commit -m "feat(ai): organize conversation history like ChatGPT"
+          git push
