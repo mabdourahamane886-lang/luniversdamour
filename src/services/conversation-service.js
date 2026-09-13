@@ -5,6 +5,7 @@ import { normalizeMessages, sanitizeText } from "../shared/validation.js";
 import { AppError } from "../shared/errors.js";
 import { redactForLogs } from "../ai/memory.js";
 import { buildMemoryContext, extractExplicitMemories, loadMemories, saveMemories } from "./ai-memory-service.js";
+import { buildKnowledgeContext, searchKnowledge } from "./knowledge-service.js";
 
 function normalizeAiText(value) {
   if (typeof value === "string") return value.trim();
@@ -46,16 +47,20 @@ export async function runGeneration({ payload, tool }) {
   const memoryEnabled = payload.memoryEnabled !== false;
   const memories = memoryEnabled ? await loadMemories(sessionId) : [];
   const memoryContext = buildMemoryContext(memories);
+  const knowledgeItems = await searchKnowledge(lastUser.content, 5);
+  const knowledgeContext = buildKnowledgeContext(knowledgeItems);
 
   console.info("ai_request", {
     tool: tool || "chat",
     preview: redactForLogs(lastUser.content),
-    memory: Boolean(memoryContext)
+    memory: Boolean(memoryContext),
+    knowledge: knowledgeItems.length
   });
 
   const result = await generateWithFallback({
-    systemPrompt: SYSTEM_PROMPT + memoryContext + extra,
-    messages
+    systemPrompt: SYSTEM_PROMPT + memoryContext + knowledgeContext + extra,
+    messages,
+    knowledge: knowledgeItems
   });
   const text = normalizeAiText(result?.text ?? result);
   if (!text) {
@@ -74,6 +79,7 @@ export async function runGeneration({ payload, tool }) {
     text,
     provider: result.provider,
     model: result.model,
+    knowledgeUsed: knowledgeItems.length,
     promptVersion: PROMPT_VERSION
   };
 }
