@@ -2,9 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "echo static-site-no-build",
   "outputDirectory": ".",
-  "rewrites": [
-    { "source": "/", "destination": "/modele-v2.html" }
-  ],
   "functions": {
     "api/chat.js": {
       "maxDuration": 30
