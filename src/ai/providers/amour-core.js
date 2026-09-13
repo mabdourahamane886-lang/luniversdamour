@@ -2,63 +2,118 @@ import { AIProvider } from "../AIProvider.js";
 
 const TOPICS = [
   {
-    test: /(aime|amour|sentiment|m'aime|m aime|m\'aime)/i,
-    answer: (q) => `Je comprends que cette question te préoccupe. À partir d'un seul comportement, on ne peut pas savoir avec certitude ce qu'une personne ressent. Regarde plutôt la constance de ses actes : communication, respect, disponibilité, cohérence entre ses paroles et ses actions.\n\nPour avancer, demande clairement ce que vous voulez tous les deux. Si tu me décris la situation précise, je peux l'analyser avec toi.\n\nQuestion reçue : « ${q} »`
+    test: /(est-ce qu'il m'aime|est-ce qu'elle m'aime|m'aime|m aime|sentiments)/i,
+    answers: [
+      (q) => `Tu ne peux pas savoir ce que quelqu’un ressent à partir d’un seul signe. Regarde plutôt l’ensemble : présence, respect, écoute, constance et volonté de faire une place à la relation.\n\nTa question porte sur une situation précise : « ${q} ». Si tu me donnes les comportements que tu as observés, je peux les analyser sans tirer de conclusion trop vite.`,
+      () => `Il peut y avoir des signes d’intérêt, mais aucun comportement isolé ne permet de conclure avec certitude. Observe surtout la régularité des actes, la qualité de la communication et le respect de tes limites.\n\nAu lieu d’essayer de deviner, une question simple comme « Comment vois-tu notre relation aujourd’hui ? » peut apporter une réponse plus claire.`,
+      () => `Pour comprendre les sentiments d’une personne, cherche la cohérence entre ses paroles et ses actes. Est-elle disponible, attentive, respectueuse et prête à construire quelque chose avec toi ?\n\nDécris-moi ce qu’elle fait concrètement et je pourrai t’aider à distinguer les signes d’intérêt, les ambiguïtés et les fausses interprétations.`
+    ]
   },
   {
-    test: /(rupture|quitter|separation|séparation|ex|ancien.ne? partenaire)/i,
-    answer: () => `Après une rupture, donne-toi du temps avant d'agir sous le coup de l'émotion. Respecte une décision clairement exprimée, évite les messages répétitifs et reconstruis progressivement ta routine, tes liens sociaux et tes projets. Revenir vers un ex n'est pas une obligation.\n\nSi tu me racontes ce qui s'est passé, je peux t'aider à distinguer ce que tu ressens, ce que l'autre a demandé et ce que tu peux réellement faire maintenant.`
+    test: /(rupture|quitter|séparation|separation|ex\b|ancien partenaire)/i,
+    answers: [
+      () => `Après une rupture, évite de décider sous le choc. Respecte la décision exprimée, donne de l’espace si nécessaire et regarde ce qui a réellement conduit à la séparation.\n\nUne éventuelle reprise ne peut être saine que si les causes du problème sont comprises et si des changements concrets sont possibles.`,
+      () => `Une séparation ne signifie pas automatiquement qu’il faut couper tout contact ni qu’il faut absolument revenir ensemble. Commence par identifier ce que tu ressens, ce que l’autre a demandé et ce qui est réaliste aujourd’hui.`,
+      () => `Le plus utile après une rupture est de séparer le manque de la compatibilité réelle. Qu’est-ce qui fonctionnait ? Qu’est-ce qui faisait souffrir ? Qu’est-ce qui devrait changer pour recommencer autrement ?`
+    ]
   },
   {
     test: /(jalousie|jaloux|jalouse|infidélité|infidelite|trompe|tromper)/i,
-    answer: () => `La jalousie peut signaler une peur, un manque de confiance ou un problème réel, mais elle ne constitue pas à elle seule une preuve d'infidélité. Cherche des faits observables, puis parle du comportement qui te dérange sans accusation immédiate.\n\nFormulation utile : « Ce que j'ai observé me met mal à l'aise. J'aimerais comprendre ce qui se passe et savoir comment nous pouvons rétablir la confiance. »`
+    answers: [
+      () => `La jalousie est une émotion, pas une preuve. Avant d’accuser, distingue ce que tu sais réellement de ce que tu imagines. Ensuite, parle du comportement qui te dérange et de son effet sur toi.`,
+      () => `Demande-toi ce qui alimente ta jalousie : un fait préoccupant, une expérience passée ou une peur personnelle. Les trois peuvent se ressembler, mais la bonne réponse n’est pas la même.`,
+      () => `Avant de conclure à une infidélité, cherche des éléments vérifiables. Une discussion calme peut révéler un malentendu, un manque de transparence ou un vrai problème de confiance.`
+    ]
   },
   {
-    test: /(confiance|confiance en soi|respect|communication|dispute|conflit)/i,
-    answer: () => `Dans une relation, une communication saine repose sur trois éléments : dire clairement ce que l'on ressent, écouter sans interrompre et convenir d'une action concrète. Évite les généralisations comme « toujours » ou « jamais » et parle d'un comportement précis.\n\nLa confiance se construit surtout par la cohérence dans le temps : tenir ses engagements, reconnaître ses erreurs et respecter les limites convenues.`
+    test: /(confiance|respect|communication|dispute|conflit|se comprendre|écouter)/i,
+    answers: [
+      () => `Dans un conflit, parle d’un comportement précis, explique ton ressenti et formule une demande concrète. Évite les « toujours » et « jamais », qui transforment facilement une discussion en accusation.`,
+      () => `Le but d’une discussion de couple n’est pas de gagner. C’est de comprendre le problème, reconnaître ce qui est vrai des deux côtés et décider de la prochaine action.`,
+      () => `La confiance se construit dans le temps : paroles claires, actes cohérents, respect des limites et capacité à reconnaître ses erreurs. Une promesse isolée ne suffit pas.`
+    ]
   },
   {
-    test: /(limite|limites|trop contrôler|controle|contrôle|possessif|possessive|vie privée)/i,
-    answer: () => `Une limite saine décrit ce que tu acceptes, ce que tu refuses et ce que tu feras pour te protéger. Elle ne sert pas à contrôler l'autre. Dans un couple, chacun doit pouvoir conserver sa vie personnelle, ses proches et ses choix tout en respectant les accords communs.\n\nTu peux dire : « Je veux que nous puissions parler de ce sujet sans contrôler nos téléphones ni nous menacer. »`
+    test: /(limite|limites|contrôle|controle|possessif|possessive|vie privée)/i,
+    answers: [
+      () => `Une limite saine indique ce que tu acceptes et ce que tu feras pour te protéger. Elle ne sert pas à contrôler l’autre. Chacun doit pouvoir garder son intimité et ses relations sociales tout en respectant les accords du couple.`,
+      () => `Contrôler le téléphone, les amis ou les déplacements d’une personne n’est pas une preuve d’amour. Une relation saine repose sur des accords explicites, le consentement et le respect de l’autonomie de chacun.`,
+      () => `Tu peux poser une limite sans menace : « Ce comportement ne me convient pas. J’ai besoin que nous trouvions une autre manière de faire. » Cela protège la relation sans chercher à diriger l’autre.`
+    ]
   },
   {
     test: /(distance|loin|relation à distance|relation a distance)/i,
-    answer: () => `Une relation à distance fonctionne mieux quand les attentes sont explicites : fréquence des échanges, disponibilité, exclusivité, visites et projets futurs. La qualité de la communication compte davantage que l'envoi permanent de messages. Garder une vie personnelle équilibrée aide aussi la relation.`
+    answers: [
+      () => `Une relation à distance fonctionne mieux quand les attentes sont claires : fréquence des échanges, exclusivité, visites, horaires et projet commun. La qualité des échanges compte plus que la quantité de messages.`,
+      () => `À distance, chacun doit garder sa vie personnelle tout en créant des rendez-vous réguliers pour se retrouver. Les incompréhensions diminuent quand les attentes sont dites explicitement.`,
+      () => `Le point essentiel d’une relation à distance est de savoir où vous allez. Sans projet ni attentes partagées, l’incertitude augmente. Avec un accord clair, la distance devient plus gérable.`
+    ]
   },
   {
     test: /(manipulation|manipuler|gaslight|culpabilise|chantage affectif|menace affective)/i,
-    answer: () => `Une manipulation peut se manifester par une culpabilisation répétée, des menaces affectives, le contrôle des contacts, l'isolement ou le renversement systématique de la faute. Un signe isolé ne suffit pas à conclure : observe les comportements répétés et leur impact sur toi.\n\nSi tu te sens en danger ou fortement contrôlé, cherche le soutien d'une personne de confiance et protège ta sécurité.`
+    answers: [
+      () => `Une manipulation peut prendre la forme d’une culpabilisation répétée, d’un contrôle, d’un isolement ou d’un renversement systématique de la faute. Un seul épisode ne suffit pas : regarde les comportements répétés et leur effet sur toi.`,
+      () => `Si quelqu’un te menace de partir, de se faire du mal ou de te punir chaque fois que tu poses une limite, ce n’est pas une communication saine. Cherche du soutien extérieur et protège-toi.`,
+      () => `Le signe important n’est pas seulement ce qui est dit, mais ce qui se répète : pression, peur, culpabilité, contrôle ou impossibilité de dire non librement.`
+    ]
   },
   {
     test: /(rendez-vous|date|premier rendez|première rencontre|premiere rencontre)/i,
-    answer: () => `Pour un premier rendez-vous, privilégie un lieu public et confortable, un budget réaliste et une activité qui permet de parler. Respecte les limites de chacun et ne considère jamais l'attention ou l'argent dépensé comme une dette affective. L'objectif est simplement de mieux se connaître.`
+    answers: [
+      () => `Pour un premier rendez-vous, choisis un lieu public et confortable, une activité simple et un budget raisonnable. L’objectif est de parler et de voir si vous êtes à l’aise ensemble.`,
+      () => `Un bon premier rendez-vous n’a pas besoin d’être coûteux. Café, promenade dans un lieu fréquenté ou activité courte permettent de discuter sans pression.`,
+      () => `Pense surtout au confort et au consentement : lieu sûr, durée raisonnable et possibilité pour chacun de partir facilement s’il ne se sent pas à l’aise.`
+    ]
   },
   {
     test: /(désolé|desole|pardon|excuse|réconciliation|reconciliation)/i,
-    answer: () => `Une bonne excuse reconnaît précisément ce qui s'est passé et son impact. Évite « désolé si tu l'as mal pris ». Préfère : « J'ai fait X, je comprends que cela t'ait blessé, je le regrette et je vais faire Y différemment. » Ensuite, laisse à l'autre le temps de répondre sans exiger un pardon immédiat.`
+    answers: [
+      () => `Une vraie excuse nomme ce qui s’est passé, reconnaît l’impact et annonce un changement concret. Évite « désolé si tu l’as mal pris ».`,
+      () => `Tu peux commencer par : « J’ai fait… Je comprends que cela t’ait blessé. Je le regrette et je vais faire… différemment. » Ensuite, laisse à l’autre le temps de répondre.`,
+      () => `Demander pardon ne signifie pas exiger une réconciliation immédiate. L’autre peut avoir besoin de temps avant de retrouver confiance.`
+    ]
   },
   {
-    test: /(trist|déprim|deprime|pleur|souffre|solitude|seul|seule)/i,
-    answer: () => `Ce que tu ressens mérite d'être pris au sérieux. Essaie de ne pas rester isolé : parle à une personne de confiance, repose-toi et donne-toi du temps avant de prendre une décision importante. Si ta sécurité est en jeu ou si tu risques de te faire du mal, cherche immédiatement une aide humaine locale ou les services d'urgence.\n\nJe peux aussi t'aider à mettre la situation en ordre, étape par étape.`
+    test: /(message|écrire|ecrire|sms|whatsapp|texte)/i,
+    answers: [
+      () => `Je peux te rédiger le message directement. Donne-moi simplement l’objectif : séduire, rassurer, s’excuser, remercier, se réconcilier ou dire au revoir.`,
+      () => `Un message efficace doit sonner comme toi. Donne-moi quelques mots sur la situation et je peux écrire une version naturelle, courte ou romantique.`,
+      () => `Tu n’as pas besoin de connaître les bons mots à l’avance. Explique-moi ce que tu veux faire comprendre et je le transforme en message prêt à envoyer.`
+    ]
   },
   {
-    test: /(message|écrire|ecrire|sms|whatsapp|texte à|texte a)/i,
-    answer: () => `Je peux t'aider à rédiger un message naturel. Pour qu'il soit vraiment adapté, indique simplement la personne à qui tu écris, ce qui s'est passé et le ton souhaité : doux, romantique, direct, réconciliation, excuse ou séparation.\n\nPour un message romantique, une petite attention personnelle vaut souvent mieux qu'une longue déclaration générique.`
+    test: /(trist|déprim|déprime|pleur|souffre|solitude|seul|seule)/i,
+    answers: [
+      () => `Quand une situation affective fait mal, commence par retrouver un peu de stabilité avant de décider. Parle à une personne de confiance et évite les décisions impulsives.`,
+      () => `Tu n’as pas besoin de tout résoudre aujourd’hui. Mets des mots sur ce qui te fait souffrir, identifie ce qui dépend de toi et avance une étape à la fois.`,
+      () => `La douleur émotionnelle peut brouiller le jugement. Prends du recul, garde un soutien humain autour de toi et donne-toi du temps.`
+    ]
   },
   {
     test: /(salut|bonjour|bonsoir|hello|coucou|ça va|ca va)/i,
-    answer: () => `Bonjour 💜 Je suis Amour AI, l'assistante de L'univers d'amour. Je peux t'aider sur les relations, les émotions, la communication, les messages, mais aussi réfléchir avec toi sur une situation générale. Que souhaites-tu faire aujourd'hui ?`
+    answers: [
+      () => `Bonjour 💜 Je suis Amour AI. Pose-moi directement ta question et je vais essayer de t’aider concrètement.`,
+      () => `Bienvenue dans L’univers d’amour ❤️ Dis-moi ce qui se passe, ce que tu veux écrire ou ce que tu veux comprendre.`,
+      () => `Coucou ✨ Je suis là. Explique-moi simplement ta situation et on va chercher une réponse ensemble.`
+    ]
   }
 ];
 
-function buildKnowledgeAnswer(question, knowledge) {
+function stableIndex(text, length) {
+  let hash = 0;
+  for (const char of String(text)) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return hash % Math.max(1, length);
+}
+
+function buildKnowledgeAnswer(knowledge, question) {
   const items = knowledge
     .filter((item) => item?.title && item?.content)
     .slice(0, 3);
   if (!items.length) return "";
 
-  const parts = items.map((item) => `• ${item.title} : ${String(item.content).trim()}`);
-  return `Je m'appuie sur les connaissances disponibles de L'univers d'amour pour te répondre. Voici les éléments les plus pertinents :\n\n${parts.join("\n\n")}\n\nSi tu me donnes davantage de contexte, je peux t'aider à appliquer ces principes à ta situation.`;
+  const ordered = [...items].sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0));
+  const first = ordered[stableIndex(question, ordered.length)];
+  return `${first.content}\n\nApplication à ta situation : explique-moi ce qui s’est passé concrètement et je peux t’aider à adapter ce principe.`;
 }
 
 export class AmourCoreProvider extends AIProvider {
@@ -73,19 +128,20 @@ export class AmourCoreProvider extends AIProvider {
 
     const match = TOPICS.find((topic) => topic.test.test(question));
     if (match) {
+      const answer = match.answers[stableIndex(question, match.answers.length)];
       return {
-        text: match.answer(question),
+        text: answer(question),
         provider: this.name,
-        model: "amour-core-v2"
+        model: "amour-core-v3"
       };
     }
 
-    const knowledgeAnswer = buildKnowledgeAnswer(question, knowledge);
+    const knowledgeAnswer = buildKnowledgeAnswer(knowledge, question);
     if (knowledgeAnswer) {
       return {
         text: knowledgeAnswer,
         provider: this.name,
-        model: "amour-core-rag-v2"
+        model: "amour-core-rag-v3"
       };
     }
 
@@ -95,6 +151,6 @@ export class AmourCoreProvider extends AIProvider {
   }
 
   fallbackText() {
-    return `Je suis Amour AI Core, le moteur local de L'univers d'amour. Je peux fonctionner sans Gemini avec notre base de connaissances et notre moteur conversationnel. Pour les questions qui dépassent encore cette base, un modèle génératif open source compatible peut prendre le relais.`;
+    return `Je n’ai pas encore assez de connaissances locales pour répondre correctement à cette question. Un modèle génératif open source peut prendre le relais lorsqu’il est configuré.`;
   }
 }
