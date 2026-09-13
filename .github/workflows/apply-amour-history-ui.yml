@@ -1,5 +1,6 @@
 name: Apply Amour AI history UI
 
+# One-shot UI patch; runs on the next push to main.
 on:
   push:
     branches: [main]
