@@ -21,6 +21,21 @@ function ensureSessionId(request, response) {
   return sessionId;
 }
 
+function cleanLegacyAnswer(value) {
+  let text = String(value || "").replace(/\r\n/g, "\n").trim();
+  if (!text) return text;
+
+  // Keep the model's content, but remove legacy forced-analysis labels that
+  // could still appear when an older provider/model follows a cached prompt.
+  text = text
+    .replace(/^\s*(?:Réponse directe|Niveau de certitude|Hypothèses ou limites|Étape suivante)\s*:\s*/gim, "")
+    .replace(/^\s*(?:Réponse directe|Niveau de certitude|Hypothèses ou limites|Étape suivante)\s*$/gim, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return text || String(value || "").trim();
+}
+
 export default async function handler(request, response) {
   if (handlePreflight(request, response)) return;
   if (request.method !== "POST") {
@@ -42,9 +57,10 @@ export default async function handler(request, response) {
     payload.memoryEnabled = payload.memoryEnabled !== false;
 
     const result = await runGeneration({ payload, tool: payload.tool });
+    const reply = cleanLegacyAnswer(result.text);
     const data = {
-      reply: result.text,
-      text: result.text,
+      reply,
+      text: reply,
       provider: result.provider,
       model: result.model,
       blocked: result.blocked,
@@ -63,8 +79,8 @@ export default async function handler(request, response) {
     return json(response, 200, {
       success: true,
       data,
-      reply: result.text,
-      text: result.text,
+      reply,
+      text: reply,
       provider: result.provider,
       model: result.model,
       memoryEnabled: payload.memoryEnabled,
