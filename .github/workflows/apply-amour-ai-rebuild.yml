@@ -1,0 +1,38 @@
+name: Apply Amour AI rebuild
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inject rebuild script
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('amour-ai.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="js/frontend/amour-ai-rebuild.js"></script>'
+          if tag not in s:
+              marker = '</body>'
+              if marker in s:
+                  s = s.replace(marker, tag + '\n' + marker, 1)
+              else:
+                  s += '\n' + tag + '\n'
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit injected script
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add amour-ai.html
+          if git diff --cached --quiet; then
+            echo 'No changes required.'
+          else
+            git commit -m 'ci: apply Amour AI interface rebuild'
+            git push
+          fi
