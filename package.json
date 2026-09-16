@@ -1,9 +1,10 @@
 {
   "name": "luniversdamour",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "scripts": {
+    "build": "node scripts/verify.mjs",
     "dev": "vercel dev",
     "start": "node server.js"
   },
