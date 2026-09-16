@@ -1,9 +1,11 @@
 name: Apply Amour AI rebuild
+
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+
 permissions:
   contents: write
+
 jobs:
   apply:
     runs-on: ubuntu-latest
