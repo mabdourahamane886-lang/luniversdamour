@@ -1,0 +1,1 @@
+document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('a[href="#experience"]')?.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();location.href='experience.html'}));});
