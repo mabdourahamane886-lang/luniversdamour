@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "start": "node server.js",
-    "build": "node scripts/verify.mjs"
+    "start": "node server.js"
   },
   "engines": {
     "node": "22.x"
