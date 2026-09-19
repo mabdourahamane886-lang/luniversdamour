@@ -1,0 +1,16 @@
+node_modules/
+.wrangler/
+.git/
+.github/
+.vercel/
+.env
+.env.*
+.gitignore
+package.json
+README.md
+server.js
+vercel.json
+wrangler.toml
+wrangler.json
+wrangler.jsonc
+cloudflare-worker.js
