@@ -6,9 +6,13 @@
   "scripts": {
     "build": "node scripts/verify.mjs",
     "dev": "vercel dev",
-    "start": "node server.js"
+    "start": "node server.js",
+    "deploy": "wrangler deploy"
   },
   "engines": {
     "node": "22.x"
+  },
+  "devDependencies": {
+    "wrangler": "4.135.0"
   }
 }
