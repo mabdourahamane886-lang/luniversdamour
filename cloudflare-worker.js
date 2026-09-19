@@ -151,7 +151,7 @@ async function handleApi(request, handler) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const apiPath = url.pathname.replace(/\\/+$/, "") || "/";
+    const apiPath = url.pathname.replace(/\/+$/, "") || "/";
 
     const handler = handlers[apiPath];
     if (handler) {
