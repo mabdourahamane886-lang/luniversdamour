@@ -7,6 +7,7 @@ node_modules/
 .env.*
 .gitignore
 package.json
+package-lock.json
 README.md
 server.js
 vercel.json
@@ -14,3 +15,13 @@ wrangler.toml
 wrangler.json
 wrangler.jsonc
 cloudflare-worker.js
+api/
+src/
+scripts/
+supabase/
+tests/
+test/
+*.test.js
+*.test.mjs
+*.spec.js
+*.spec.mjs
