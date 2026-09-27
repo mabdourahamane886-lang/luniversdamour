@@ -131,7 +131,7 @@
   async function send(value){
     value=text(value);if(!value||sending)return;if(value.length>MAX){showError(`Maximum ${MAX} caractères.`);return}
     const c=active(),ctx=(c.messages||[]).slice(-CONTEXT).map(m=>({role:m.role,content:text(m.text||m.content)}));ctx.push({role:"user",content:value});lastRequest=ctx;
-    add("user",value);render();renderHistory();els.input.value="";resize();sending=true;els.send.disabled=true;els.thinking.hidden=false;els.error.hidden=true;
+    add("user",value);render();renderHistory();els.input.value="";resize();els.form.classList.remove("has-text");sending=true;els.send.disabled=true;els.thinking.hidden=false;els.error.hidden=true;
     try{const reply=await api(ctx);add("assistant",reply);render();renderHistory();if(state.voice)speak(reply)}catch(e){showError(e.message||"Impossible de contacter Amour AI.")}finally{sending=false;els.send.disabled=false;els.thinking.hidden=true}
   }
   async function regenerate(){
@@ -147,7 +147,7 @@
     if(b.dataset.act==="delete"){const real=active().messages.length-visible.length+Number(b.dataset.index);active().messages.splice(real,1);save();render();renderHistory()}
   }
   els.form.addEventListener("submit",e=>{e.preventDefault();send(els.input.value)});
-  els.input.addEventListener("input",resize);
+  els.input.addEventListener("input",()=>{resize();els.form.classList.toggle("has-text",!!els.input.value.trim())});
   els.input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();els.form.requestSubmit()}});
   els.newChat?.addEventListener("click",newChat);els.search?.addEventListener("input",renderHistory);
   els.menu?.addEventListener("click",()=>els.sidebar?.classList.toggle("open"));
