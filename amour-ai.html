@@ -19,7 +19,7 @@ button{cursor:pointer}
 .menu{width:44px;height:44px;border:0;border-radius:50%;background:#f7f7f8;display:grid;place-items:center;color:#202123}
 .menu svg{width:25px;height:25px}
 .ai-top{display:flex;align-items:center}
-.ai-dot{width:44px;height:44px;border-radius:50%;background:#f7f7f8;display:grid;place-items:center}
+.brand-mark{width:44px;height:44px;border-radius:50%;background:#f7f7f8;display:grid;place-items:center;color:#111}.brand-mark svg{width:28px;height:28px}.ai-dot{width:44px;height:44px;border-radius:50%;background:#f7f7f8;display:grid;place-items:center}
 .ai-dot svg{width:25px;height:25px}
 .chat-head{display:none}
 .messages{position:absolute;inset:0;overflow:auto;padding:90px 18px 190px;scroll-behavior:smooth}
@@ -51,7 +51,7 @@ button{cursor:pointer}
 .plus,.mic,.send{width:42px;height:42px;flex:0 0 42px;border:0;border-radius:50%;display:grid;place-items:center}
 .plus{order:5;background:transparent;color:#111;font-size:30px;font-weight:300}
 .mic{background:transparent;color:#111;font-size:21px}
-.send{background:#202123;color:#fff}
+.send{order:6;background:#202123;color:#fff}
 .send:disabled{opacity:.45}
 .amour-voice-button{width:42px;height:42px;border:0;border-radius:50%;background:#000;color:#fff;display:grid;place-items:center}
 .amour-voice-button svg{width:22px;height:22px}
@@ -64,7 +64,7 @@ button{cursor:pointer}
 .generated{display:block;max-width:100%;border-radius:14px;margin-top:10px}
 @media(max-width:520px){
  .topbar{height:70px;padding:0 18px}
- .menu,.ai-dot{width:44px;height:44px}
+ .menu,.ai-dot,.brand-mark{width:44px;height:44px}
  .messages{padding-bottom:175px}
  .empty{top:47%;transform:translate(-50%,-50%);width:calc(100% - 34px)}
  .empty .chips{gap:30px}
@@ -79,7 +79,9 @@ button{cursor:pointer}
 <div class="app">
 <main class="main">
 <header class="topbar">
-  <div></div>
+  <div class="ai-top">
+    <div class="brand-mark" aria-label="Amour AI"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 17c0-5 3-9 8-9s8 4 8 9"/><path d="M8 17c0 5 3 9 8 9s8-4 8-9"/><path d="M5 13c0 3 2 5 5 5M27 13c0 3-2 5-5 5"/></svg></div>
+  </div>
   <div class="ai-top">
     <button class="menu" id="menu" aria-label="Ouvrir le menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 8h14M5 16h14"/></svg>
