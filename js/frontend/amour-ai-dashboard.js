@@ -55,7 +55,7 @@
   function render(){
     const c=active(),ms=c?.messages||[];
     if(!ms.length){
-      els.messages.innerHTML='<div class="empty"><div class="big">♥</div><h2>Bonjour, je suis Amour AI</h2><p>Votre compagnon intelligent pour l’amour, les relations, les projets, l’apprentissage, la technologie et la créativité.</p><div class="chips"><button class="chip" data-prompt="Comment mieux communiquer dans une relation ?">Relations</button><button class="chip" data-prompt="Aide-moi à organiser mon projet.">Projet</button><button class="chip" data-prompt="Explique-moi un sujet simplement.">Apprentissage</button><button class="chip" data-prompt="Donne-moi une idée créative.">Créativité</button></div></div>';
+      els.messages.innerHTML='<div class="empty"><div class="chips"><button class="chip" data-image-suggestion="1"><span>Créer une image ou un sticker</span><span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8" cy="9" r="1.5"/><path d="m4.5 17 4.5-4 3 2 2-2 5.5 4"/></svg></span></button><button class="chip" data-prompt="Aide-moi à écrire ou modifier un texte."><span>Écrire ou modifier</span><span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4.2-1 10.4-10.4a2.2 2.2 0 0 0-3.1-3.1L5.1 15.9 4 20Z"/><path d="m13.8 6.2 4 4"/></svg></span></button></div></div>';
       return;
     }
     const visible=ms.slice(-80);
@@ -107,19 +107,19 @@
   let voiceBtn=null;
   function injectVoice(){
     if(document.getElementById("amourVoiceButton"))return document.getElementById("amourVoiceButton");
-    const host=els.form.querySelector(".composer-right")||els.form.querySelector(".composer")||els.form;
-    voiceBtn=document.createElement("button");voiceBtn.type="button";voiceBtn.id="amourVoiceButton";voiceBtn.className="amour-voice-button";voiceBtn.textContent="🎙";voiceBtn.title="Dicter un message";voiceBtn.setAttribute("aria-label","Dicter un message");
+    const host=els.form.querySelector(".voice-slot")||els.form;
+    voiceBtn=document.createElement("button");voiceBtn.type="button";voiceBtn.id="amourVoiceButton";voiceBtn.className="amour-voice-button";voiceBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h2M9 9v6M13 7v10M17 9v6M21 12h-2"/></svg>';voiceBtn.title="Mode vocal";voiceBtn.setAttribute("aria-label","Dicter un message");
     host.appendChild(voiceBtn);voiceBtn.addEventListener("click",setupVoice);return voiceBtn;
   }
   function injectStyle(){
     if(document.getElementById("amour-ai-enhanced-style"))return;
     const s=document.createElement("style");s.id="amour-ai-enhanced-style";s.textContent=`
-      .amour-voice-button{width:34px;height:34px;border:0;border-radius:50%;background:#f2f1ee;color:#202124;cursor:pointer;font-size:15px;display:inline-grid;place-items:center;margin:0 2px;transition:.18s}
+      .amour-voice-button{width:42px;height:42px;border:0;border-radius:50%;background:#000;color:#fff;cursor:pointer;display:inline-grid;place-items:center;margin:0;transition:.18s}
       .amour-voice-button:hover{transform:scale(1.05)}.amour-voice-button.recording{background:#e51b72;color:#fff;animation:amourPulse 1.1s infinite}
       @keyframes amourPulse{50%{box-shadow:0 0 0 7px rgba(229,27,114,.12)}}
       .actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.actions button{cursor:pointer;border:1px solid #e8e6e2;background:#fff;border-radius:8px;padding:5px 8px;font-size:11px}
       .actions button:hover{background:#f7f6f3}.msg .text{white-space:normal}.empty .chip{cursor:pointer}
-      @media(max-width:820px){.amour-voice-button{width:28px;height:28px;font-size:13px}.actions button{font-size:8px;padding:4px 6px}}
+      @media(max-width:820px){.amour-voice-button{width:42px;height:42px}.actions button{font-size:8px;padding:4px 6px}}
     `;document.head.appendChild(s);
   }
   function newChat(){const c={id:uid(),title:"Nouvelle conversation",updatedAt:Date.now(),messages:[]};state.conversations.unshift(c);state.activeId=c.id;save();render();renderHistory();els.input.focus()}
