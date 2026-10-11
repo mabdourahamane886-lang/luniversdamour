@@ -10,7 +10,7 @@
 <link rel="canonical" href="https://luniversdamour.vercel.app/amour-ai.html">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Amour AI — L’univers d’amour">
-<meta property="og:description" content="Un espace simple et confidentiel pour réfléchir, écrire et mieux communiquer.">
+<meta property="og:description" content="Un espace simple et confidentiel pour réfléchir, écrire et mieux communiquer."><meta property="og:image" content="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1200&q=85">
 <style>
 :root{--bg:#fff;--text:#202123;--muted:#777;--soft:#f7f7f8;--line:#e5e5e5}
 *{box-sizing:border-box}
@@ -129,15 +129,83 @@ html,body,.main,.app,.content,.card{background:#fff!important;color:#111827!impo
 @media(max-width:520px){.sidebar{width:min(310px,calc(100vw - 42px));padding-top:18px}}
 @media(prefers-reduced-motion:reduce){.sidebar{transition:none}}
 
+
+/* Amour AI — polished white, black and blue chat experience */
+:root{--bg:#fff;--text:#111827;--muted:#6b7280;--soft:#f8fafc;--line:#e5e7eb;--accent:#2563eb}
+html,body,.main,.app,.content,.card{background:#fff!important;color:#111827!important}
+.topbar{height:70px!important;padding:0 clamp(14px,4vw,42px)!important;border-bottom:1px solid #f1f5f9;backdrop-filter:blur(14px)}
+.home-brand{display:flex;align-items:center;gap:11px;color:#111827;text-decoration:none;pointer-events:auto}
+.home-brand .brand-mark{width:40px;height:40px;border-radius:13px;background:#2563eb!important;color:#fff!important;box-shadow:0 7px 18px rgba(37,99,235,.15)}
+.home-brand .brand-mark svg{width:24px;height:24px}
+.home-brand strong{display:block;font-size:13px;font-weight:800;letter-spacing:-.2px}
+.home-brand small{display:block;color:#6b7280;font-size:10px;margin-top:3px}
+.menu{background:#fff!important;border:1px solid #e5e7eb!important;color:#1d4ed8!important;box-shadow:0 3px 10px rgba(15,23,42,.03)}
+.menu:hover{background:#eff6ff!important}
+.messages{padding:96px 20px 190px!important}
+.empty{top:48%!important;transform:translate(-50%,-50%)!important;width:min(760px,calc(100% - 36px))!important}
+.empty .welcome-mark{width:54px;height:54px;display:grid;place-items:center;margin:0 auto 20px;border-radius:18px;background:#eff6ff;color:#2563eb;font-size:27px;box-shadow:inset 0 0 0 1px #dbeafe}
+.empty h2{display:block!important;margin:0;color:#111827;font-size:clamp(25px,4vw,35px);font-weight:750;letter-spacing:-1.2px;line-height:1.2}
+.empty p{display:block!important;max-width:510px;margin:12px auto 24px;color:#6b7280;font-size:14px;line-height:1.75}
+.empty .chips{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch!important;gap:10px!important;width:100%!important;margin:0 auto!important}
+.empty .chip{display:flex!important;align-items:center!important;gap:12px!important;min-width:0;text-align:left!important;white-space:normal;padding:14px!important;border:1px solid #e5e7eb!important;border-radius:16px!important;background:#fff!important;color:#111827!important;font-size:13px!important;transition:transform .18s,border-color .18s,background .18s!important}
+.empty .chip:hover{transform:translateY(-2px);border-color:#93c5fd!important;background:#f8fbff!important}
+.empty .chip>span:last-child{display:block;min-width:0}
+.empty .chip strong{display:block;color:#111827;font-size:12px;font-weight:750}
+.empty .chip small{display:block;margin-top:4px;color:#6b7280;font-size:10px;line-height:1.45}
+.empty .chip .chip-symbol{display:grid;place-items:center;width:38px;height:38px;flex:0 0 38px;border-radius:12px;background:#eff6ff;color:#2563eb;font-size:20px}
+.msg{max-width:850px!important;margin-bottom:24px!important}
+.avatar{background:#eff6ff!important;color:#2563eb!important}
+.user .avatar{background:#2563eb!important;color:#fff!important}
+.bubble{background:#f8fafc!important;border-color:#e5e7eb!important;color:#111827!important;border-radius:18px 18px 18px 6px!important}
+.user .bubble{background:#eff6ff!important;border-color:#dbeafe!important;color:#111827!important;border-radius:18px 18px 6px 18px!important}
+.text{font-size:15px;line-height:1.75}
+.composer{width:min(760px,calc(100% - 34px))!important;min-height:62px;height:auto!important;padding:8px 10px!important;border:1px solid #d1d5db!important;border-radius:24px!important;box-shadow:0 10px 36px rgba(15,23,42,.08)!important}
+.composer:focus-within{border-color:#93c5fd!important;box-shadow:0 0 0 4px rgba(37,99,235,.08),0 10px 36px rgba(15,23,42,.07)!important}
+.composer textarea{min-height:42px;line-height:1.5!important;padding:10px 0!important;max-height:120px!important}
+.plus,.mic{background:transparent!important;color:#4b5563!important}
+.send{background:#2563eb!important;color:#fff!important}
+.send:hover{background:#1d4ed8!important}
+.amour-voice-button{background:#eff6ff!important;color:#1d4ed8!important}
+.amour-voice-button.recording{background:#2563eb!important;color:#fff!important}
+.actions{display:flex!important;flex-wrap:wrap;gap:6px!important}
+.actions button{border:1px solid #dbeafe!important;background:#fff!important;color:#1d4ed8!important;border-radius:9px!important;padding:6px 9px!important}
+.actions button:hover{background:#eff6ff!important}
+.thinking{color:#1d4ed8!important;background:#fff!important}
+.error{border:1px solid #fecaca!important;background:#fef2f2!important;color:#b91c1c!important}
+.image-panel{border-color:#dbeafe!important;box-shadow:0 18px 50px rgba(15,23,42,.12)!important}
+.mobile-note{color:#9ca3af!important}
+.sidebar{background:#fff!important;border-right:1px solid #e5e7eb!important;box-shadow:18px 0 50px rgba(15,23,42,.08)!important}
+.new-chat{background:#eff6ff!important;border-color:#dbeafe!important;color:#1d4ed8!important}
+.conv>button:first-child:hover,.conv>button:first-child.active{background:#eff6ff!important;color:#1d4ed8!important}
+.back-home{color:#1d4ed8!important}
+:focus-visible{outline:3px solid #93c5fd!important;outline-offset:3px}
+@media(max-width:640px){
+ .topbar{height:62px!important;padding:0 14px!important}
+ .home-brand .brand-mark{width:36px;height:36px;flex:0 0 36px}
+ .home-brand strong{font-size:12px}
+ .home-brand small{font-size:9px}
+ .messages{padding:78px 12px 170px!important}
+ .empty{top:45%!important;width:calc(100% - 24px)!important}
+ .empty .welcome-mark{width:46px;height:46px;border-radius:15px;margin-bottom:15px}
+ .empty h2{font-size:25px}
+ .empty p{font-size:12px;margin:10px auto 18px}
+ .empty .chips{grid-template-columns:1fr!important;gap:8px!important}
+ .empty .chip{padding:10px 12px!important}
+ .empty .chip .chip-symbol{width:34px;height:34px;flex-basis:34px}
+ .composer{bottom:25px!important;width:calc(100% - 20px)!important;gap:5px!important;padding:6px!important}
+ .plus,.mic,.send,.amour-voice-button{width:36px!important;height:36px!important;flex-basis:36px!important}
+ .composer textarea{font-size:16px!important}
+ .mobile-note{bottom:4px!important;font-size:9px!important}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;animation-iteration-count:1!important}}
+
 </style>
 </head>
 <body>
 <div class="app">
 <main class="main">
 <header class="topbar">
-  <div class="ai-top">
-    <div class="brand-mark" aria-label="Amour AI"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 17c0-5 3-9 8-9s8 4 8 9"/><path d="M8 17c0 5 3 9 8 9s8-4 8-9"/><path d="M5 13c0 3 2 5 5 5M27 13c0 3-2 5-5 5"/></svg></div>
-  </div>
+  <div class="ai-top"><a class="home-brand" href="/" aria-label="Retour à L’univers d’amour"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 17c0-5 3-9 8-9s8 4 8 9"/><path d="M8 17c0 5 3 9 8 9s8-4 8-9"/><path d="M5 13c0 3 2 5 5 5M27 13c0 3-2 5-5 5"/></svg></span><span><strong>L’univers d’amour</strong><small>Assistant relationnel</small></span></a></div>
   <div class="ai-top">
     <button class="menu" id="menu" type="button" aria-label="Ouvrir l’historique des conversations" aria-expanded="false" aria-controls="sidebar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 8h14M5 16h14"/></svg>
