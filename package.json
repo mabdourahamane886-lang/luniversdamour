@@ -9,9 +9,6 @@
     "start": "node server.js",
     "deploy": "wrangler deploy"
   },
-  "engines": {
-    "node": "22.x"
-  },
   "devDependencies": {
     "wrangler": "4.135.0"
   }
