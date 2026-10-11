@@ -4,7 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Amour AI — L’univers d’amour</title>
-<meta name="description" content="Amour AI, votre assistant intelligent pour l’amour, les relations, la créativité et la vie quotidienne.">
+<meta name="description" content="Discutez avec Amour AI, votre assistant pour les relations, la communication et les messages personnalisés.">
+<meta name="theme-color" content="#2563eb">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://luniversdamour.vercel.app/amour-ai.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Amour AI — L’univers d’amour">
+<meta property="og:description" content="Un espace simple et confidentiel pour réfléchir, écrire et mieux communiquer.">
 <style>
 :root{--bg:#fff;--text:#202123;--muted:#777;--soft:#f7f7f8;--line:#e5e5e5}
 *{box-sizing:border-box}
@@ -96,6 +102,33 @@ html,body,.main,.app,.content,.card{background:#fff!important;color:#111827!impo
 .empty .chip{color:#1d4ed8!important}
 .mobile-note{color:#6b7280!important}
 
+
+/* Professional conversation history drawer */
+.sidebar{position:fixed;inset:0 auto 0 0;width:min(330px,calc(100vw - 48px));padding:20px 14px 14px;background:#fff;border-right:1px solid #e5e7eb;box-shadow:18px 0 50px rgba(15,23,42,.08);z-index:80;display:flex;flex-direction:column;gap:12px;transform:translateX(-105%);transition:transform .24s ease;visibility:hidden}
+.sidebar.open{transform:translateX(0);visibility:visible}
+.sidebar-head{display:flex;align-items:center;justify-content:space-between;padding:2px 5px 12px;border-bottom:1px solid #e5e7eb}
+.sidebar-head strong{display:block;font-size:16px;color:#111827}
+.sidebar-head span{display:block;margin-top:3px;color:#6b7280;font-size:11px}
+.sidebar-head button{width:34px;height:34px;border:0;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:25px;line-height:1}
+.new-chat{display:flex;align-items:center;gap:9px;width:100%;padding:12px 13px;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff;color:#1d4ed8;text-align:left;font-weight:700;font-size:13px}
+.new-chat span{font-size:20px}
+.search-label{font-size:11px;font-weight:700;color:#4b5563;margin-top:3px}
+.history-search{width:100%;padding:11px 12px;border:1px solid #d1d5db;border-radius:11px;background:#fff;color:#111827;outline:none}
+.history-search:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.history{overflow:auto;min-height:0;flex:1;padding-right:2px}
+.group-title{padding:14px 7px 6px;color:#6b7280;font-size:11px;font-weight:700}
+.conv{display:flex;align-items:center;gap:4px;margin:2px 0}
+.conv>button:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;padding:10px;border:0;border-radius:10px;background:transparent;color:#374151;font-size:12px}
+.conv>button:first-child:hover,.conv>button:first-child.active{background:#eff6ff;color:#1d4ed8}
+.conv .del{width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:#6b7280;font-size:17px}
+.conv .del:hover{background:#fef2f2;color:#b91c1c}
+.back-home{display:block;padding:13px 10px;border-top:1px solid #e5e7eb;color:#1d4ed8;font-size:12px;font-weight:700}
+.sidebar-backdrop{display:none;position:fixed;inset:0;width:100%;height:100%;border:0;border-radius:0;background:rgba(15,23,42,.32);z-index:70}
+.sidebar.open+.sidebar-backdrop{display:block}
+.topbar .menu{border:1px solid #dbeafe}
+@media(max-width:520px){.sidebar{width:min(310px,calc(100vw - 42px));padding-top:18px}}
+@media(prefers-reduced-motion:reduce){.sidebar{transition:none}}
+
 </style>
 </head>
 <body>
@@ -106,11 +139,22 @@ html,body,.main,.app,.content,.card{background:#fff!important;color:#111827!impo
     <div class="brand-mark" aria-label="Amour AI"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 17c0-5 3-9 8-9s8 4 8 9"/><path d="M8 17c0 5 3 9 8 9s8-4 8-9"/><path d="M5 13c0 3 2 5 5 5M27 13c0 3-2 5-5 5"/></svg></div>
   </div>
   <div class="ai-top">
-    <button class="menu" id="menu" aria-label="Ouvrir le menu">
+    <button class="menu" id="menu" type="button" aria-label="Ouvrir l’historique des conversations" aria-expanded="false" aria-controls="sidebar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 8h14M5 16h14"/></svg>
     </button>
   </div>
 </header>
+
+<aside class="sidebar" id="sidebar" aria-label="Historique des conversations">
+  <div class="sidebar-head"><div><strong>Amour AI</strong><span>Vos conversations</span></div><button id="closeSidebar" type="button" aria-label="Fermer l’historique">×</button></div>
+  <button class="new-chat" id="newChat" type="button"><span aria-hidden="true">＋</span> Nouvelle conversation</button>
+  <label class="search-label" for="search">Rechercher dans l’historique</label>
+  <input id="search" class="history-search" type="search" placeholder="Rechercher…" autocomplete="off">
+  <div id="history" class="history" aria-live="polite"></div>
+  <a class="back-home" href="/">← Retour à L’univers d’amour</a>
+</aside>
+<button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Fermer le menu"></button>
+
 <div class="content">
 <section class="card">
   <div class="chat-head"><h1>Amour AI</h1></div>
@@ -149,4 +193,17 @@ const mic=document.getElementById('mic'),input=document.getElementById('input'),
 if(!SR){mic.disabled=true;mic.title='La dictée vocale n’est pas disponible sur ce navigateur.'}else{const rec=new SR();rec.lang='fr-FR';rec.interimResults=false;rec.continuous=false;rec.onresult=e=>{const t=e.results?.[0]?.[0]?.transcript||'';if(t){input.value=(input.value?input.value+' ':'')+t;input.dispatchEvent(new Event('input',{bubbles:true));input.focus()}};mic.onclick=()=>{try{rec.start()}catch(e){}}}
 })();
 </script>
+
+<script>
+(()=>{const sidebar=document.getElementById('sidebar'),backdrop=document.getElementById('sidebarBackdrop'),menu=document.getElementById('menu'),close=document.getElementById('closeSidebar'),newChat=document.getElementById('newChat'),history=document.getElementById('history');
+if(!sidebar||!backdrop||!menu)return;
+const sync=()=>menu.setAttribute('aria-expanded',String(sidebar.classList.contains('open')));
+const shut=()=>{sidebar.classList.remove('open');sync()};
+backdrop.addEventListener('click',shut);close?.addEventListener('click',shut);
+menu.addEventListener('click',()=>setTimeout(sync,0));
+newChat?.addEventListener('click',shut);history?.addEventListener('click',()=>setTimeout(sync,0));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')shut()});
+})();
+</script>
+
 </body></html>
