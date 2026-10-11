@@ -253,12 +253,53 @@ html,body,.main,.app,.content,.card{background:#fff!important;color:#111827!impo
 </div>
 <script src="js/frontend/amour-ai-dashboard.js"></script>
 <script>
-(()=>{const p=document.getElementById('imagePanel'),q=document.getElementById('imageToggleQuick'),g=document.getElementById('generateImage'),c=document.getElementById('closeImage'),i=document.getElementById('imagePrompt'),r=document.getElementById('imageResult');
-const open=()=>p.classList.toggle('open');q.onclick=open;c.onclick=()=>p.classList.remove('open');
-document.addEventListener('click',e=>{if(e.target.closest('[data-image-suggestion]'))p.classList.add('open')});
-g.onclick=async()=>{const prompt=i.value.trim();if(!prompt)return;i.disabled=true;g.disabled=true;g.textContent='Création…';r.textContent='Amour AI crée votre image…';try{const x=await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});const d=await x.json().catch(()=>({}));if(!x.ok)throw new Error(d?.error||d?.message||('HTTP '+x.status));const url=d?.url||d?.image||d?.data?.url;if(!url)throw new Error('Image introuvable dans la réponse.');r.innerHTML='<img class="generated" src="'+String(url).replace(/"/g,'&quot;')+'" alt="Image générée par Amour AI">'}catch(e){r.textContent='Impossible de générer l’image pour le moment : '+(e.message||'erreur inconnue')}finally{i.disabled=false;g.disabled=false;g.textContent='Générer l’image'}};
-const mic=document.getElementById('mic'),input=document.getElementById('input'),SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!SR){mic.disabled=true;mic.title='La dictée vocale n’est pas disponible sur ce navigateur.'}else{const rec=new SR();rec.lang='fr-FR';rec.interimResults=false;rec.continuous=false;rec.onresult=e=>{const t=e.results?.[0]?.[0]?.transcript||'';if(t){input.value=(input.value?input.value+' ':'')+t;input.dispatchEvent(new Event('input',{bubbles:true));input.focus()}};mic.onclick=()=>{try{rec.start()}catch(e){}}}
+(()=>{
+  const panel=document.getElementById("imagePanel");
+  const quick=document.getElementById("imageToggleQuick");
+  const generate=document.getElementById("generateImage");
+  const close=document.getElementById("closeImage");
+  const promptField=document.getElementById("imagePrompt");
+  const result=document.getElementById("imageResult");
+  const input=document.getElementById("input");
+  const mic=document.getElementById("mic");
+
+  const openPanel=()=>{panel?.classList.add("open");promptField?.focus()};
+  quick?.addEventListener("click",()=>panel?.classList.toggle("open"));
+  close?.addEventListener("click",()=>panel?.classList.remove("open"));
+  document.addEventListener("click",event=>{if(event.target.closest("[data-image-suggestion]"))openPanel()});
+
+  generate?.addEventListener("click",async()=>{
+    const prompt=promptField?.value.trim();
+    if(!prompt||!generate||!result)return;
+    promptField.disabled=true;generate.disabled=true;generate.textContent="Création…";
+    result.textContent="Amour AI crée votre image…";
+    try{
+      const response=await fetch("/api/image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data?.error?.message||data?.error||data?.message||("HTTP "+response.status));
+      const imageUrl=data?.data?.url||data?.url||data?.image;
+      const base64=data?.data?.b64_json||data?.b64_json;
+      if(imageUrl){
+        const image=document.createElement("img");image.className="generated";image.src=imageUrl;image.alt="Image générée par Amour AI";result.replaceChildren(image);
+      }else if(base64){
+        const image=document.createElement("img");image.className="generated";image.src="data:image/png;base64,"+base64;image.alt="Image générée par Amour AI";result.replaceChildren(image);
+      }else{throw new Error("Aucune image n’a été retournée par le service.")}
+    }catch(error){result.textContent="Impossible de générer l’image pour le moment : "+(error.message||"erreur inconnue")}
+    finally{promptField.disabled=false;generate.disabled=false;generate.textContent="Générer l’image"}
+  });
+
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){if(mic){mic.disabled=true;mic.title="La dictée vocale n’est pas disponible sur ce navigateur."}}
+  else if(mic&&input){
+    const recognition=new SpeechRecognition();
+    recognition.lang="fr-FR";recognition.interimResults=false;recognition.continuous=false;
+    recognition.onresult=event=>{
+      const spoken=event.results?.[0]?.[0]?.transcript||"";
+      if(spoken){input.value=(input.value?input.value+" ":"")+spoken;input.dispatchEvent(new Event("input",{bubbles:true}));input.focus()}
+    };
+    recognition.onerror=()=>{mic.setAttribute("aria-label","Microphone")};
+    mic.addEventListener("click",()=>{try{recognition.start()}catch(error){/* Recognition is already active. */}});
+  }
 })();
 </script>
 
